@@ -17,6 +17,14 @@ function App() {
   const [locationIndex, setLocationIndex] = useState(0);
   const [weatherIndex, setWeatherIndex] = useState(0);
 
+  // State that stores the current player objects
+  const [players, setPlayers] = useState(null)
+
+  // State for whether the sounds are playing
+  const [neverPlayed, setNeverPlayed] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+
   // Creates buttons that cycle through sounds in specified categories when pressed (mood, location, weather)
   function SoundButton({ sound_list, selectedIndex, setSelectedIndex }) {
 
@@ -36,10 +44,44 @@ function App() {
     );
   }
 
+  // Creates a button that pauses or plays the created soundscapes once clicked.
+  // Only works if SoundButton has been pressed once
+  function PlayButton() {
+    function playButtonClick() {
+      if (isPlaying) {
+        Tone.Transport.pause();
+        setIsPlaying(false);
+
+      } else {
+        Tone.Transport.start();
+        setIsPlaying(true);
+      }
+    }
+
+    return (
+    <button style={{ marginTop: "1rem" }} onClick={playButtonClick}>
+      {isPlaying ? "Pause" : "Play"}
+    </button>
+    )
+
+
+  }
+
   // Determines how the sounds are played
   // 3 sounds, looped, and played simultaneously
   const playSound = async () => {
     try {
+      // Start Tone.js context first!
+
+      
+      // Resets any Tone.Player objects
+      if (players != null) {
+        players.forEach(player => player.stop().dispose());
+      }
+
+      Tone.Transport.stop();
+      Tone.Transport.cancel(0);
+      
 
       // Get selected sound URLs
       const moodSound = Object.values(mood_sounds[moodIndex])[0];
@@ -47,20 +89,20 @@ function App() {
       const weatherSound = Object.values(weather_sounds[weatherIndex])[0];
 
       // Creates Player objects for each sound
-      const moodPlayer = new Tone.Player({ url: moodSound, loop: true }).toDestination();
-      const locationPlayer = new Tone.Player({ url: locationSound, loop: true }).toDestination();
-      const weatherPlayer = new Tone.Player({ url: weatherSound, loop: true }).toDestination();
+      const moodPlayer = new Tone.Player({ url: moodSound, loop: true }).toDestination().sync().start(0);
+      const locationPlayer = new Tone.Player({ url: locationSound, loop: true }).toDestination().sync().start(0);
+      const weatherPlayer = new Tone.Player({ url: weatherSound, loop: true }).toDestination().sync().start(0);
 
-      // Starts the Tone.js engine and waits for it to be ready
+      // Sets the current start time for the sounds (based on when the user clicks the "Daily Soundscape" button with an added delay)
+      setPlayers([moodPlayer, locationPlayer, weatherPlayer]);
+      setNeverPlayed(false);
+      setIsPlaying(true);
+
+
       await Tone.start();
       await Tone.loaded();
 
-      // Sets the current start time for the sounds (based on when the user clicks the "Daily Soundscape" button with an added delay)
-      const startTime = Tone.now() + 0.1;
-
-      moodPlayer.start(startTime);
-      locationPlayer.start(startTime);
-      weatherPlayer.start(startTime);
+      Tone.Transport.start();
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -70,13 +112,14 @@ function App() {
   // The button triggers the playSound function
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Daily Soundscape</h1>
+      <h1>Create Daily Soundscape</h1>
       <button style={{ marginTop: "1rem" }} onClick={playSound}>
-        Play Sound
+        Create Sound
       </button>
       <SoundButton sound_list={mood_sounds} selectedIndex={moodIndex} setSelectedIndex={setMoodIndex} />
       <SoundButton sound_list={location_sounds} selectedIndex={locationIndex} setSelectedIndex={setLocationIndex} />
       <SoundButton sound_list={weather_sounds} selectedIndex={weatherIndex} setSelectedIndex={setWeatherIndex} />
+      {!(neverPlayed) && <PlayButton />}
     </div>
   );
 }
