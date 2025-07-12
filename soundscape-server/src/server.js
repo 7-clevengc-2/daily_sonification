@@ -2,9 +2,13 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const db = new sqlite3.Database('./users.db');
+
+// JWT secret key (in production, use environment variable)
+const JWT_SECRET = 'your-secret-key-change-in-production';
 
 app.use(cors());
 app.use(express.json());
@@ -26,7 +30,18 @@ app.post('/signup', (req, res) => {
     if (err) {
       return res.status(400).json({ error: "User already exists" });
     }
-    res.json({ success: true });
+    
+    // Create user object without password
+    const user = { id: this.lastID, username };
+    
+    // Generate JWT token
+    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+    
+    res.json({ 
+      success: true, 
+      user, 
+      token 
+    });
   });
 });
 
@@ -39,8 +54,46 @@ app.post('/login', (req, res) => {
     const valid = bcrypt.compareSync(password, user.password);
     if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
-    res.json({ success: true });
+    // Create user object without password
+    const userData = { id: user.id, username: user.username };
+    
+    // Generate JWT token
+    const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({ 
+      success: true, 
+      user: userData, 
+      token 
+    });
   });
+});
+
+// Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Invalid token" });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Protected route example
+app.get('/protected', authenticateToken, (req, res) => {
+  res.json({ message: "This is a protected route", user: req.user });
+});
+
+// Logout route (client-side logout, server just acknowledges)
+app.post('/logout', (req, res) => {
+  res.json({ success: true, message: "Logged out successfully" });
 });
 
 app.listen(3001, () => console.log("Server running on http://localhost:3001"));
