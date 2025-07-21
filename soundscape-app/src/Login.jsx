@@ -22,8 +22,8 @@ export default function Login() {
       // Store authentication data
       login(res.data.user, res.data.token);
       
-      // Redirect to soundscape page
-      navigate('/soundscape');
+      // Redirect to survey page
+      navigate('/survey');
     } catch (e) {
       setError(e.response?.data?.error || 'Login failed. Please try again.');
     } finally {

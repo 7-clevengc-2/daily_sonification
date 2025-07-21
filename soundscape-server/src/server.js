@@ -1,8 +1,8 @@
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const bcrypt = require('bcryptjs');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
+const express = require('express'); //Express.js makes handling server requests, responses, and data flow within a Node.js application simpler
+const sqlite3 = require('sqlite3').verbose();  //database
+const bcrypt = require('bcryptjs');  // Hashes passwords for security
+const cors = require('cors'); // Prevents access to daily sonification features until signed in
+const jwt = require('jsonwebtoken'); // jsonwebtoken acts as a proof of authentication after the user signs in
 
 const app = express();
 const db = new sqlite3.Database('./users.db');

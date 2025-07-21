@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react
 import Signup from './Signup.jsx';
 import Login from './Login.jsx';
 import SoundscapePage from './pages/SoundscapePage';
+import Survey from './pages/Survey';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -16,6 +17,7 @@ function App() {
             <ul style={{ listStyle: "none", display: "flex", gap: "2rem", margin: 0, padding: 0 }}>
               <li><Link to="/">Home</Link></li>
               <li><Link to="/soundscape">Soundscape</Link></li>
+              <li><Link to="/survey">Survey</Link></li>
               <li><Link to="/login">Login</Link></li>
               <li><Link to="/signup">Signup</Link></li>
               <li><LogoutButton /></li>
@@ -24,6 +26,11 @@ function App() {
 
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/survey" element={
+              <ProtectedRoute>
+                <Survey />
+              </ProtectedRoute>
+            } />
             <Route path="/soundscape" element={
               <ProtectedRoute>
                 <SoundscapePage />
