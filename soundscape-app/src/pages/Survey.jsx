@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import * as Tone from "tone";
 
 //Objects for each survey question
 // Questions is the test displayed to the user, options is an array of possible answers,
@@ -41,23 +42,115 @@ const questions = [
     key: "tempo",
     isTempo: true,
   },
+  {
+    question: "Adjust the volume of the sounds based on how much you notice them today.",
+    key: "volume_control",
+    isVolumeControl: true,
+  },
 ];
+
+// Sound mappings (copied from SoundscapePage.jsx)
+const mood_sounds = [
+  { calm: "/sounds/calm_pad.wav" },
+  { stressed: "/sounds/stress.wav" },
+  { happy: "/sounds/calm_pad.wav" },
+];
+const location_sounds = [
+  { forest: "/sounds/forest_birds.wav" },
+  { city: "/sounds/traffic.wav" },
+  { beach: "/sounds/forest_birds.wav" },
+];
+const weather_sounds = [
+  { raining: "/sounds/thunder.wav" },
+  { windy: "/sounds/really_windy.wav" },
+  { sunny: "/sounds/thunder.wav" },
+];
+function getIndexFromAnswer(list, answer) {
+  return list.findIndex(
+    (obj) => Object.keys(obj)[0].toLowerCase() === answer?.toLowerCase()
+  );
+}
 
 function Survey() {
   const [step, setStep] = useState(0); // tracks the question the user is on starting at 0
   const [answers, setAnswers] = useState({
     weather: "",
+    weather_volume: 0,
     place: "",
+    place_volume: 0, // fixed typo here
     social_people : "",
     social: "",
     day_rating: "",
     mood: "",
+    mood_volume: 0,
     tempo: 120,
   }); // Stores the users answer to each question
   const navigate = useNavigate(); // used to navigate to another page once the survey is complete
 
   // Track if the user has interacted with the tempo slider
   const [tempoTouched, setTempoTouched] = useState(false);
+
+  // Refs to store currently playing Tone.Player objects for each category
+  const weatherPlayerRef = useRef(null);
+  const placePlayerRef = useRef(null);
+  const moodPlayerRef = useRef(null);
+
+  // Helper to stop and dispose the current player
+  function stopAndDisposePlayer(playerRef) {
+    if (playerRef.current) {
+      try {
+        playerRef.current.stop();
+        playerRef.current.dispose();
+      } catch (e) {
+        // Ignore errors
+      }
+      playerRef.current = null;
+    }
+  }
+
+  // Play a sample sound for a given category and option
+  async function playSample(category, option) {
+    // Map category/option to sound URL
+    let soundUrl = null;
+    if (category === "weather") {
+      const idx = getIndexFromAnswer(weather_sounds, option);
+      if (idx !== -1) soundUrl = Object.values(weather_sounds[idx])[0];
+      stopAndDisposePlayer(weatherPlayerRef);
+      const weatherPlayer = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
+      weatherPlayerRef.current = weatherPlayer;
+      weatherPlayer.autostart = true;
+
+    } else if (category === "place") {
+      const idx = getIndexFromAnswer(location_sounds, option);
+      if (idx !== -1) soundUrl = Object.values(location_sounds[idx])[0];
+      stopAndDisposePlayer(placePlayerRef);
+      const placePlayer = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
+      placePlayerRef.current = placePlayer;
+      placePlayer.autostart = true;
+
+    } else if (category === "mood") {
+      const idx = getIndexFromAnswer(mood_sounds, option);
+      if (idx !== -1) soundUrl = Object.values(mood_sounds[idx])[0];
+      stopAndDisposePlayer(moodPlayerRef);
+      const moodPlayer = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
+      moodPlayerRef.current = moodPlayer;
+      moodPlayer.autostart = true;
+    }
+    if (!soundUrl) return;
+
+    /*
+    stopAndDisposePlayer();
+    try {
+      //await Tone.start();
+      //await Tone.loaded();
+      const player = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
+      playerRef.current = player;
+      player.autostart = true;
+    } catch (e) {
+      console.error("Error playing sample sound:", e);
+    }
+      */
+  }
 
   // Updates the answers state when a user selects an option
   function handleSelect(option) {
@@ -68,12 +161,37 @@ function Survey() {
         ? option === "Slow" ? 80 : option === "Normal" ? 120 : 160
         : option,
     }));
+    // Play sample sound if this is a sound-linked question
+    if (["weather", "place", "mood"].includes(key)) {
+      playSample(key, option);
+    }
   }
 
   // For tempo slider
   function handleTempoChange(value) {
     setAnswers(prev => ({ ...prev, tempo: Number(value) }));
     setTempoTouched(true);
+    let playbackRate = answers.tempo / 120;
+    weatherPlayerRef.current.playbackRate = playbackRate;
+    moodPlayerRef.current.playbackRate = playbackRate;
+    placePlayerRef.current.playBackRate = playbackRate;
+  }
+
+  // Handler for volume slider changes
+  function handleVolumeChange(category, value) {
+    const vol = Number(value);
+    setAnswers(prev => ({
+      ...prev,
+      [`${category}_volume`]: vol,
+    }));
+    // Set Tone.Player volume (in dB, range -60 to 0)
+    let playerRef = null;
+    if (category === "weather") playerRef = weatherPlayerRef;
+    if (category === "place") playerRef = placePlayerRef;
+    if (category === "mood") playerRef = moodPlayerRef;
+    if (playerRef && playerRef.current) {
+      playerRef.current.volume.value = vol;
+    }
   }
 
   // Continue to next question or submit
@@ -83,6 +201,10 @@ function Survey() {
       setStep(step + 1);
       setTempoTouched(false); // reset for next time tempo appears
     } else {
+      // Stop and dispose all players before navigating away
+      stopAndDisposePlayer(weatherPlayerRef);
+      stopAndDisposePlayer(placePlayerRef);
+      stopAndDisposePlayer(moodPlayerRef);
       // Go to soundscape page with answers
       navigate("/soundscape", { state: { ...answers } });
     }
@@ -98,8 +220,53 @@ function Survey() {
       <h2>Daily Soundscape Survey</h2> 
       <div style={{ margin: "2rem 0" }}>
         <h3>{questions[step].question}</h3>
-        {/* Render slider for tempo question, buttons for others */}
-        {isTempo ? (
+        {/* Render volume sliders for the final question */}
+        {questions[step].isVolumeControl ? (
+          <div>
+            <div style={{ margin: "1.5rem 0" }}>
+              <label>
+                Weather Volume: {answers.weather_volume}
+                <input
+                  type="range"
+                  min={-20}
+                  max={20}
+                  step={1}
+                  value={answers.weather_volume}
+                  onChange={e => handleVolumeChange("weather", e.target.value)}
+                  style={{ width: "60%", marginLeft: "1rem" }}
+                />
+              </label>
+            </div>
+            <div style={{ margin: "1.5rem 0" }}>
+              <label>
+                Place Volume: {answers.place_volume}
+                <input
+                  type="range"
+                  min={-20}
+                  max={20}
+                  step={1}
+                  value={answers.place_volume}
+                  onChange={e => handleVolumeChange("place", e.target.value)}
+                  style={{ width: "60%", marginLeft: "1rem" }}
+                />
+              </label>
+            </div>
+            <div style={{ margin: "1.5rem 0" }}>
+              <label>
+                Mood Volume: {answers.mood_volume}
+                <input
+                  type="range"
+                  min={-20}
+                  max={20}
+                  step={1}
+                  value={answers.mood_volume}
+                  onChange={e => handleVolumeChange("mood", e.target.value)}
+                  style={{ width: "60%", marginLeft: "1rem" }}
+                />
+              </label>
+            </div>
+          </div>
+        ) : isTempo ? (
           <div>
             <input
               type="range"
