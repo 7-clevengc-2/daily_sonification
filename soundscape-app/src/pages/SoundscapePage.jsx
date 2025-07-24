@@ -74,12 +74,19 @@ function SoundscapePage() {
       const locationSound = Object.values(location_sounds[locIdx])[0];
       const weatherSound = Object.values(weather_sounds[weatherIdx])[0];
       const playbackRate = bpm / ORIGINAL_BPM;
+      // Get volume values from survey (default to 0 if not set)
+      const moodVolume = survey?.mood_volume ?? 0;
+      const placeVolume = survey?.place_volume ?? 0;
+      const weatherVolume = survey?.weather_volume ?? 0;
       const moodPlayer = new Tone.Player({ url: moodSound, loop: true }).toDestination().sync().start(0);
       moodPlayer.playbackRate = playbackRate;
+      moodPlayer.volume.value = moodVolume;
       const locationPlayer = new Tone.Player({ url: locationSound, loop: true }).toDestination().sync().start(0);
       locationPlayer.playbackRate = playbackRate;
+      locationPlayer.volume.value = placeVolume;
       const weatherPlayer = new Tone.Player({ url: weatherSound, loop: true }).toDestination().sync().start(0);
       weatherPlayer.playbackRate = playbackRate;
+      weatherPlayer.volume.value = weatherVolume;
       setPlayers([moodPlayer, locationPlayer, weatherPlayer]);
       setNeverPlayed(false);
       setIsPlaying(true);
