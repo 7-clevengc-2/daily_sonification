@@ -22,12 +22,12 @@ const questions = [
     key: "social_people",
   },
   {
-    question: "What did your social interactions sound like?",
+    question: "What did your social interactions sound like? [CURRENTLY NO SOUNDS]",
     options: ["Hum", "Bark", "Laughter", "Murmur", "Yelling", "Singing"],
     key: "social",
   },
   {
-    question: "Rate how your day went on a scale of 1-5 (with 1 being the worst and 5 being the best)",
+    question: "Rate how your day went on a scale of 1-5 (with 1 being the worst and 5 being the best).",
     options: ["1", "2", "3", "4", "5"],
     key: "day_rating",
   },
@@ -43,7 +43,7 @@ const questions = [
     isTempo: true,
   },
   {
-    question: "Adjust the volume of the sounds based on how much you notice them today.",
+    question: "Adjust the volume of each element based on how aware you were of each.",
     key: "volume_control",
     isVolumeControl: true,
   },

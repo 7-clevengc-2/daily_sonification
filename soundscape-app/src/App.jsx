@@ -84,7 +84,7 @@ function HomePage() {
       <h1>Welcome to Daily Sonification</h1>
       <p>Create your own personalized soundscape experience.</p>
       {isAuthenticated ? (
-        <Link to="/soundscape" style={{ 
+        <Link to="/survey" style={{ 
           display: "inline-block", 
           marginTop: "1rem", 
           padding: "0.5rem 1rem", 
