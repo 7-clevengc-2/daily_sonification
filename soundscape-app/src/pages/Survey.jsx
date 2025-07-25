@@ -17,22 +17,22 @@ const questions = [
     key: "place",
   },
   {
-    question: "Did you spend time with anyone today?  If so, pick the person you had the most significant interactions with",
+    question: "Did you spend time with anyone today?  If so, pick the person you had the most significant interactions with.",
     options: ["Myself", "Family", "Friends", "Pets", "Coworkers", "Strangers"],
     key: "social_people",
   },
   {
     question: "What did your social interactions sound like?",
-    options: ["Hum", "Bark", "Laughter", "Serious Murmur", "Yelling", "Singing"],
+    options: ["Hum", "Bark", "Laughter", "Murmur", "Yelling", "Singing"],
     key: "social",
   },
   {
-    question: "Rate how your day went on a scale of 1-5 (with 1 being the worst and 5 being the best",
+    question: "Rate how your day went on a scale of 1-5 (with 1 being the worst and 5 being the best)",
     options: ["1", "2", "3", "4", "5"],
     key: "day_rating",
   },
   {
-    question: "Pick a sound that best represents your mood today",
+    question: "Pick a sound that best represents your mood today.",
     options: ["Calm", "Stressed", "Happy"],
     key: "mood",
   },
@@ -53,17 +53,17 @@ const questions = [
 const mood_sounds = [
   { calm: "/sounds/calm_pad.wav" },
   { stressed: "/sounds/stress.wav" },
-  { happy: "/sounds/calm_pad.wav" },
+  { happy: "/sounds/768286__lolamoore__happy.mp3" },
 ];
 const location_sounds = [
   { forest: "/sounds/forest_birds.wav" },
   { city: "/sounds/traffic.wav" },
-  { beach: "/sounds/forest_birds.wav" },
+  { beach: "/sounds/beach.wav" },
 ];
 const weather_sounds = [
   { raining: "/sounds/thunder.wav" },
   { windy: "/sounds/really_windy.wav" },
-  { sunny: "/sounds/thunder.wav" },
+  { sunny: "/sounds/sun_rays.mp3" },
 ];
 function getIndexFromAnswer(list, answer) {
   return list.findIndex(

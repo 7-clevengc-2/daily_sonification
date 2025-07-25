@@ -3,9 +3,9 @@ import * as Tone from "tone";
 import { useLocation } from "react-router-dom";
 
 // Stores the names and urls for the sounds (some current sounds are duplicates so I can test functionality with limited audio files)
-const mood_sounds = [{calm : "/sounds/calm_pad.wav"}, {stressed : "/sounds/stress.wav"}, {happy: "/sounds/calm_pad.wav"}]; 
-const location_sounds = [{forest : "/sounds/forest_birds.wav"}, {city : "/sounds/traffic.wav"}, {beach: "/sounds/forest_birds.wav"}];
-const weather_sounds = [{raining : "/sounds/thunder.wav"}, {windy : "/sounds/really_windy.wav"}, {sunny: "/sounds/thunder.wav"}];
+const mood_sounds = [{calm : "/sounds/calm_pad.wav"}, {stressed : "/sounds/stress.wav"}, {happy: "/sounds/768286__lolamoore__happy.mp3"}]; 
+const location_sounds = [{forest : "/sounds/forest_birds.wav"}, {city : "/sounds/traffic.wav"}, {beach: "/sounds/beach.wav"}];
+const weather_sounds = [{raining : "/sounds/thunder.wav"}, {windy : "/sounds/really_windy.wav"}, {sunny: "/sounds/sun_rays.mp3"}];
 
 function getIndexFromAnswer(list, answer) {
   return list.findIndex(obj => Object.keys(obj)[0].toLowerCase() === answer?.toLowerCase());
