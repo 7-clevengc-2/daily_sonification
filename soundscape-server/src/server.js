@@ -13,7 +13,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 // Port configuration (use environment variable for production)
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// CORS configuration to support both localhost and deployed application
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5174', // Vite default port
+    'https://daily-sonification.onrender.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Create users table
