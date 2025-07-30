@@ -1,12 +1,65 @@
-# React + Vite
+# Daily Sonification - Soundscape App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React application for creating personalized soundscapes based on daily experiences.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This project uses Vite for development. To get started:
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Deployment Configuration
+
+### Environment Variables
+
+The app automatically switches between localhost (development) and your Render server URL (production) based on the environment.
+
+1. Copy `env.example` to `.env`:
+   ```bash
+   cp env.example .env
+   ```
+
+2. Update the `.env` file with your Render server URL:
+   ```
+   VITE_API_URL=https://your-render-server-name.onrender.com
+   ```
+
+### Render Deployment
+
+1. **Frontend (soundscape-app)**:
+   - Connect your GitHub repository to Render
+   - Set the build command: `npm run build`
+   - Set the publish directory: `dist`
+   - Add environment variable: `VITE_API_URL=https://your-render-server-name.onrender.com`
+
+2. **Backend (soundscape-server)**:
+   - Deploy the `soundscape-server` directory as a separate service
+   - Set the build command: `npm install`
+   - Set the start command: `node src/server.js`
+   - Add environment variables as needed (JWT_SECRET, etc.)
+
+### How It Works
+
+The app uses a configuration system (`src/config.js`) that:
+- Automatically detects if it's running in development mode
+- Uses `http://localhost:3001` for development
+- Uses the `VITE_API_URL` environment variable for production
+- Falls back to a default Render URL if the environment variable is not set
+
+## Technology Stack
+
+- React 19
+- Vite
+- Axios for API calls
+- React Router for navigation
+- Tone.js for audio processing
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint

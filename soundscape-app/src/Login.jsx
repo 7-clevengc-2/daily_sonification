@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import config from './config';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -17,7 +18,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:3001/login', { username, password });
+      const res = await axios.post(`${config.apiBaseUrl}/login`, { username, password });
       
       // Store authentication data
       login(res.data.user, res.data.token);

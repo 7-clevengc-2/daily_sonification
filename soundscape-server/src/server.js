@@ -7,8 +7,11 @@ const jwt = require('jsonwebtoken'); // jsonwebtoken acts as a proof of authenti
 const app = express();
 const db = new sqlite3.Database('./users.db');
 
-// JWT secret key (in production, use environment variable)
-const JWT_SECRET = 'your-secret-key-change-in-production';
+// JWT secret key (use environment variable in production)
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// Port configuration (use environment variable for production)
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -96,4 +99,4 @@ app.post('/logout', (req, res) => {
   res.json({ success: true, message: "Logged out successfully" });
 });
 
-app.listen(3001, () => console.log("Server running on http://localhost:3001"));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
