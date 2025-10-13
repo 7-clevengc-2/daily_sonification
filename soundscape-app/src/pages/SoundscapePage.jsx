@@ -122,7 +122,7 @@ function SoundscapePage() {
       }
     }
     return (
-      <button style={{ marginTop: "1rem" }} onClick={soundButtonClick}>
+      <button className="btn btn-secondary" onClick={soundButtonClick}>
         {Object.keys(sound_list[selectedIndex])[0]}
       </button>
     );
@@ -139,7 +139,10 @@ function SoundscapePage() {
       }
     }
     return (
-      <button style={{ marginTop: "1rem" }} onClick={playButtonClick}>
+      <button 
+        className={`btn ${isPlaying ? 'btn-outline' : 'btn-primary'}`}
+        onClick={playButtonClick}
+      >
         {isPlaying ? "Pause" : "Play"}
       </button>
     )
@@ -147,42 +150,85 @@ function SoundscapePage() {
 
   // Main UI for the soundscape page
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Your Daily Soundscape</h1>
-      {survey ? (
-        <div style={{ margin: "2rem 0" }}>
-          <div><b>Weather:</b> {survey.weather}</div>
-          <div><b>Place:</b> {survey.place}</div>
-          <div><b>Social:</b> {survey.social}</div>
-          <div><b>Mood:</b> {survey.mood}</div>
-          <div><b>Tempo:</b> {survey.tempo} BPM</div>
-          <div style={{ marginTop: "2rem" }}>
-            <PlayButton />
+    <div className="container" style={{ paddingTop: "var(--spacing-xl)", paddingBottom: "var(--spacing-xl)" }}>
+      <div className="text-center animate-fade-in">
+        <h1 style={{ marginBottom: "var(--spacing-xl)" }}>Your Daily Soundscape</h1>
+        
+        {survey ? (
+          <div className="card" style={{ maxWidth: "600px", margin: "0 auto" }}>
+            <div className="card-header">
+              <h2>Survey Results</h2>
+            </div>
+            <div className="card-body">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--spacing-md)", marginBottom: "var(--spacing-lg)" }}>
+                <div className="form-group">
+                  <div className="form-label">Weather</div>
+                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
+                    {survey.weather}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-label">Place</div>
+                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
+                    {survey.place}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-label">Social</div>
+                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
+                    {survey.social}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-label">Mood</div>
+                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
+                    {survey.mood}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-label">Tempo</div>
+                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
+                    {survey.tempo} BPM
+                  </div>
+                </div>
+              </div>
+              <PlayButton />
+            </div>
           </div>
-        </div>
-      ) : (
-        <>
-          <div style={{ margin: "2rem 0" }}>
-            <label htmlFor="tempo-slider">Tempo: {tempo} BPM</label>
-            <input
-              id="tempo-slider"
-              type="range"
-              min="60"
-              max="200"
-              value={tempo}
-              onChange={e => setTempo(Number(e.target.value))}
-              style={{ width: "300px", marginLeft: "1rem" }}
-            />
+        ) : (
+          <div className="card" style={{ maxWidth: "800px", margin: "0 auto" }}>
+            <div className="card-body">
+              <div className="form-group">
+                <label htmlFor="tempo-slider" className="form-label">Tempo: {tempo} BPM</label>
+                <input
+                  id="tempo-slider"
+                  type="range"
+                  min="60"
+                  max="200"
+                  value={tempo}
+                  onChange={e => setTempo(Number(e.target.value))}
+                  className="form-input"
+                  style={{ width: "100%", maxWidth: "400px" }}
+                />
+              </div>
+              
+              <div style={{ display: "flex", gap: "var(--spacing-md)", flexWrap: "wrap", justifyContent: "center", marginBottom: "var(--spacing-lg)" }}>
+                <button className="btn btn-primary" onClick={() => playSound()}>
+                  Create Sound
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "var(--spacing-md)", marginBottom: "var(--spacing-lg)" }}>
+                <SoundButton sound_list={mood_sounds} selectedIndex={moodIndex} setSelectedIndex={setMoodIndex} />
+                <SoundButton sound_list={location_sounds} selectedIndex={locationIndex} setSelectedIndex={setLocationIndex} />
+                <SoundButton sound_list={weather_sounds} selectedIndex={weatherIndex} setSelectedIndex={setWeatherIndex} />
+              </div>
+
+              {!(neverPlayed) && <PlayButton />}
+            </div>
           </div>
-          <button style={{ marginTop: "1rem" }} onClick={() => playSound()}>
-            Create Sound
-          </button>
-          <SoundButton sound_list={mood_sounds} selectedIndex={moodIndex} setSelectedIndex={setMoodIndex} />
-          <SoundButton sound_list={location_sounds} selectedIndex={locationIndex} setSelectedIndex={setLocationIndex} />
-          <SoundButton sound_list={weather_sounds} selectedIndex={weatherIndex} setSelectedIndex={setWeatherIndex} />
-          {!(neverPlayed) && <PlayButton />}
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

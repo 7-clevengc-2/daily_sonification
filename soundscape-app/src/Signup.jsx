@@ -33,46 +33,55 @@ export default function Signup() {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '2rem auto', padding: '2rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Signup</h2>
-      {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
-      <form onSubmit={handleSignup}>
-        <div style={{ marginBottom: '1rem' }}>
-          <input 
-            placeholder="Username" 
-            value={username} 
-            onChange={e => setUsername(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-            required
-          />
+    <div className="container" style={{ paddingTop: "var(--spacing-2xl)", paddingBottom: "var(--spacing-2xl)" }}>
+      <div className="card" style={{ maxWidth: "400px", margin: "0 auto" }}>
+        <div className="card-header text-center">
+          <h2>Sign Up</h2>
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <input 
-            placeholder="Password" 
-            type="password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-            required
-          />
+        <div className="card-body">
+          {error && (
+            <div style={{ 
+              color: "var(--error-500)", 
+              backgroundColor: "var(--error-50)", 
+              padding: "var(--spacing-md)", 
+              borderRadius: "var(--radius-md)", 
+              marginBottom: "var(--spacing-lg)",
+              border: "1px solid var(--error-200)"
+            }}>
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSignup}>
+            <div className="form-group">
+              <input 
+                placeholder="Username" 
+                value={username} 
+                onChange={e => setUsername(e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <input 
+                placeholder="Password" 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="btn btn-primary"
+              style={{ width: "100%" }}
+            >
+              {loading ? 'Creating account...' : 'Sign Up'}
+            </button>
+          </form>
         </div>
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ 
-            width: '100%', 
-            padding: '0.5rem', 
-            backgroundColor: '#28a745', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1
-          }}
-        >
-          {loading ? 'Creating account...' : 'Sign Up'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

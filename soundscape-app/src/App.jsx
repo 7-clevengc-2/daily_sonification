@@ -13,39 +13,47 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div>
-          <nav style={{ padding: "1rem", backgroundColor: "#f0f0f0" }}>
-            <ul style={{ listStyle: "none", display: "flex", gap: "2rem", margin: 0, padding: 0 }}>
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/soundscape">Soundscape</Link></li>
-              <li><Link to="/survey">Survey</Link></li>
-              <li><Link to="/login">Login</Link></li>
-              <li><Link to="/signup">Signup</Link></li>
-              <li><Link to="/upload">Upload</Link></li>
-              <li><LogoutButton /></li>
-            </ul>
+        <div className="min-h-screen">
+          <nav className="nav">
+            <div className="container">
+              <ul className="nav-list">
+                <li><Link to="/" className="nav-link">Home</Link></li>
+                <li><Link to="/soundscape" className="nav-link">Soundscape</Link></li>
+                <li><Link to="/survey" className="nav-link">Survey</Link></li>
+                <li><Link to="/upload" className="nav-link">Upload</Link></li>
+                <li style={{ marginLeft: "auto" }}>
+                  <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                    <Link to="/login" className="nav-link">Login</Link>
+                    <Link to="/signup" className="nav-link">Signup</Link>
+                    <LogoutButton />
+                  </div>
+                </li>
+              </ul>
+            </div>
           </nav>
 
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/survey" element={
-              <ProtectedRoute>
-                <Survey />
-              </ProtectedRoute>
-            } />
-            <Route path="/soundscape" element={
-              <ProtectedRoute>
-                <SoundscapePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/upload" element={
-              <ProtectedRoute>
-                <UploadSound />
-              </ProtectedRoute>
-            } />
-          </Routes>
+          <main>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/survey" element={
+                <ProtectedRoute>
+                  <Survey />
+                </ProtectedRoute>
+              } />
+              <Route path="/soundscape" element={
+                <ProtectedRoute>
+                  <SoundscapePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/upload" element={
+                <ProtectedRoute>
+                  <UploadSound />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </main>
         </div>
       </Router>
     </AuthProvider>
@@ -69,13 +77,7 @@ function LogoutButton() {
   return (
     <button 
       onClick={handleLogout}
-      style={{ 
-        background: 'none', 
-        border: 'none', 
-        color: '#007bff', 
-        cursor: 'pointer',
-        textDecoration: 'underline'
-      }}
+      className="btn btn-ghost btn-sm"
     >
       Logout
     </button>
@@ -87,49 +89,36 @@ function HomePage() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Welcome to Daily Sonification</h1>
-      <p>Create your own personalized soundscape experience.</p>
-      {isAuthenticated ? (
-        <Link to="/survey" style={{ 
-          display: "inline-block", 
-          marginTop: "1rem", 
-          padding: "0.5rem 1rem", 
-          backgroundColor: "#007bff", 
-          color: "white", 
-          textDecoration: "none", 
-          borderRadius: "4px" 
-        }}>
-          Start Creating
-        </Link>
-      ) : (
-        <div>
-          <p>Please login to access the soundscape creator.</p>
-          <Link to="/login" style={{ 
-            display: "inline-block", 
-            marginTop: "1rem", 
-            padding: "0.5rem 1rem", 
-            backgroundColor: "#007bff", 
-            color: "white", 
-            textDecoration: "none", 
-            borderRadius: "4px",
-            marginRight: "1rem"
-          }}>
-            Login
-          </Link>
-          <Link to="/signup" style={{ 
-            display: "inline-block", 
-            marginTop: "1rem", 
-            padding: "0.5rem 1rem", 
-            backgroundColor: "#28a745", 
-            color: "white", 
-            textDecoration: "none", 
-            borderRadius: "4px" 
-          }}>
-            Sign Up
-          </Link>
-        </div>
-      )}
+    <div className="container" style={{ paddingTop: "var(--spacing-2xl)", paddingBottom: "var(--spacing-2xl)" }}>
+      <div className="text-center animate-fade-in">
+        <h1 style={{ marginBottom: "var(--spacing-lg)" }}>Welcome to Daily Sonification</h1>
+        <p style={{ fontSize: "1.125rem", marginBottom: "var(--spacing-xl)" }}>
+          Create your own personalized soundscape experience based on your daily mood and environment.
+        </p>
+        
+        {isAuthenticated ? (
+          <div>
+            <p className="mb-4">Ready to create your soundscape?</p>
+            <Link to="/survey" className="btn btn-primary btn-lg">
+              Start Creating
+            </Link>
+          </div>
+        ) : (
+          <div className="card" style={{ maxWidth: "400px", margin: "0 auto" }}>
+            <div className="card-body">
+              <p className="mb-4">Please login to access the soundscape creator.</p>
+              <div style={{ display: "flex", gap: "var(--spacing-md)", flexWrap: "wrap", justifyContent: "center" }}>
+                <Link to="/login" className="btn btn-primary">
+                  Login
+                </Link>
+                <Link to="/signup" className="btn btn-outline">
+                  Sign Up
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
