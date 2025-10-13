@@ -26,6 +26,7 @@ function SoundscapePage() {
 
   // State that stores the current player objects
   const [players, setPlayers] = useState(null)
+  const [blobUrls, setBlobUrls] = useState([]);
 
   // State for whether the sounds are playing
   const [neverPlayed, setNeverPlayed] = useState(true);
@@ -68,11 +69,14 @@ function SoundscapePage() {
       if (players != null) {
         players.forEach(player => player.stop().dispose());
       }
+      // Revoke any previous blob URLs we created
+      blobUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch (_) {} });
+      setBlobUrls([]);
       Tone.Transport.stop();
       Tone.Transport.cancel(0);
-      const moodSound = Object.values(mood_sounds[moodIdx])[0];
-      const locationSound = Object.values(location_sounds[locIdx])[0];
-      const weatherSound = Object.values(weather_sounds[weatherIdx])[0];
+      const moodSound = survey?.mood_custom_url || Object.values(mood_sounds[moodIdx])[0];
+      const locationSound = survey?.place_custom_url || Object.values(location_sounds[locIdx])[0];
+      const weatherSound = survey?.weather_custom_url || Object.values(weather_sounds[weatherIdx])[0];
       const playbackRate = bpm / ORIGINAL_BPM;
       // Get volume values from survey (default to 0 if not set)
       const moodVolume = survey?.mood_volume ?? 0;
@@ -97,6 +101,16 @@ function SoundscapePage() {
       console.error("Error playing sound:", error);
     }
   };
+
+  // On unmount, revoke any blob URLs tracked here and dispose players
+  useEffect(() => {
+    return () => {
+      if (players) {
+        try { players.forEach(p => p.stop().dispose()); } catch (_) {}
+      }
+      blobUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch (_) {} });
+    };
+  }, [players, blobUrls]);
 
   // Creates buttons that cycle through sounds in specified categories when pressed (mood, location, weather)
   function SoundButton({ sound_list, selectedIndex, setSelectedIndex }) {

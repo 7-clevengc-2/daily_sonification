@@ -76,13 +76,16 @@ function Survey() {
   const [answers, setAnswers] = useState({
     weather: "",
     weather_volume: 0,
+    weather_custom_url: "",
     place: "",
     place_volume: 0, // fixed typo here
+    place_custom_url: "",
     social_people : "",
     social: "",
     day_rating: "",
     mood: "",
     mood_volume: 0,
+    mood_custom_url: "",
     tempo: 120,
   }); // Stores the users answer to each question
   const navigate = useNavigate(); // used to navigate to another page once the survey is complete
@@ -94,6 +97,7 @@ function Survey() {
   const weatherPlayerRef = useRef(null);
   const placePlayerRef = useRef(null);
   const moodPlayerRef = useRef(null);
+  const objectUrlsRef = useRef([]); // track created object URLs to revoke (only if discarded)
 
   // Helper to stop and dispose the current player
   function stopAndDisposePlayer(playerRef) {
@@ -107,6 +111,9 @@ function Survey() {
       playerRef.current = null;
     }
   }
+
+  // Note: We no longer revoke URLs on submit because SoundscapePage needs them.
+  // We'll only revoke URLs if the user changes their selection within the survey.
 
   // Play a sample sound for a given category and option
   async function playSample(category, option) {
@@ -150,6 +157,34 @@ function Survey() {
       console.error("Error playing sample sound:", e);
     }
       */
+  }
+
+  // Handle local file upload for a category and autoplay it
+  async function handleUpload(category, file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    objectUrlsRef.current.push(url);
+    // Update answers to mark as answered and store custom URL
+    setAnswers(prev => ({
+      ...prev,
+      [category]: "Uploaded",
+      [`${category}_custom_url`]: url,
+    }));
+
+    // Stop existing player and create a new one that autostarts
+    let playerRef = null;
+    if (category === "weather") playerRef = weatherPlayerRef;
+    if (category === "place") playerRef = placePlayerRef;
+    if (category === "mood") playerRef = moodPlayerRef;
+    if (playerRef) {
+      stopAndDisposePlayer(playerRef);
+      try {
+        await Tone.start();
+      } catch (_) {}
+      const player = new Tone.Player({ url, loop: true }).toDestination();
+      player.autostart = true;
+      playerRef.current = player;
+    }
   }
 
   // Updates the answers state when a user selects an option
@@ -280,25 +315,44 @@ function Survey() {
             <div style={{ marginBottom: "1rem" }}>Tempo: {answers.tempo} BPM</div>
           </div>
         ) : (
-          questions[step].options.map(option => (
-            <button
-              key={option}
-              onClick={() => handleSelect(option)}
-              style={{
-                display: "block",
-                margin: "1rem auto",
-                padding: "0.75rem 2rem",
-                fontSize: "1.1rem",
-                borderRadius: "6px",
-                border: answers[currentKey] === option ? "2px solid #007bff" : "1px solid #007bff",
-                background: answers[currentKey] === option ? "#e3f0ff" : "#f8f9fa",
-                cursor: "pointer",
-                fontWeight: answers[currentKey] === option ? "bold" : "normal"
-              }}
-            >
-              {option}
-            </button>
-          ))
+          <div>
+            {questions[step].options.map(option => (
+              <button
+                key={option}
+                onClick={() => handleSelect(option)}
+                style={{
+                  display: "block",
+                  margin: "1rem auto",
+                  padding: "0.75rem 2rem",
+                  fontSize: "1.1rem",
+                  borderRadius: "6px",
+                  border: answers[currentKey] === option ? "2px solid #007bff" : "1px solid #007bff",
+                  background: answers[currentKey] === option ? "#e3f0ff" : "#f8f9fa",
+                  cursor: "pointer",
+                  fontWeight: answers[currentKey] === option ? "bold" : "normal"
+                }}
+              >
+                {option}
+              </button>
+            ))}
+
+            {/* Upload alternative for sound-linked questions */}
+            {(["weather", "place", "mood"].includes(currentKey)) && (
+              <div style={{ marginTop: "1.5rem" }}>
+                <div style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>Or upload your own sound</div>
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={e => handleUpload(currentKey, e.target.files?.[0])}
+                />
+                {answers[`${currentKey}_custom_url`] && (
+                  <div style={{ marginTop: "0.5rem", color: "#28a745" }}>
+                    Custom sound selected.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
         <button
           onClick={handleContinue}

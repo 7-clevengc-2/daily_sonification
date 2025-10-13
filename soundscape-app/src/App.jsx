@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react
 import Signup from './Signup.jsx';
 import Login from './Login.jsx';
 import SoundscapePage from './pages/SoundscapePage';
+import UploadSound from './pages/UploadSound';
 import Survey from './pages/Survey';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
@@ -20,6 +21,7 @@ function App() {
               <li><Link to="/survey">Survey</Link></li>
               <li><Link to="/login">Login</Link></li>
               <li><Link to="/signup">Signup</Link></li>
+              <li><Link to="/upload">Upload</Link></li>
               <li><LogoutButton /></li>
             </ul>
           </nav>
@@ -38,6 +40,11 @@ function App() {
             } />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/upload" element={
+              <ProtectedRoute>
+                <UploadSound />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </Router>
