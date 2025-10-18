@@ -1,3 +1,4 @@
+require('dotenv').config(); // Load environment variables from .env file
 const express = require('express'); //Express.js makes handling server requests, responses, and data flow within a Node.js application simpler
 const sqlite3 = require('sqlite3').verbose();  //database
 const bcrypt = require('bcryptjs');  // Hashes passwords for security
@@ -17,6 +18,7 @@ const PORT = process.env.PORT || 3001;
 const corsOptions = {
   origin: [
     'http://localhost:3000',
+    'http://localhost:5173', // Current Vite port
     'http://localhost:5174', // Vite default port
     'https://daily-sonification.onrender.com'
   ],
@@ -33,6 +35,25 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE,
   password TEXT
+)`);
+
+// Create study sessions table for anonymous tracking
+db.run(`CREATE TABLE IF NOT EXISTS study_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  anonymous_id TEXT UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  study_day INTEGER,
+  completed_at DATETIME
+)`);
+
+// Create survey responses table
+db.run(`CREATE TABLE IF NOT EXISTS survey_responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER,
+  question_key TEXT,
+  answer_value TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (session_id) REFERENCES study_sessions (id)
 )`);
 
 // Signup
@@ -109,6 +130,141 @@ app.get('/protected', authenticateToken, (req, res) => {
 // Logout route (client-side logout, server just acknowledges)
 app.post('/logout', (req, res) => {
   res.json({ success: true, message: "Logged out successfully" });
+});
+
+// Study API endpoints
+const crypto = require('crypto');
+
+// Generate anonymous ID for study participants
+function generateAnonymousId() {
+  return crypto.randomUUID();
+}
+
+// Start a new study session
+app.post('/api/study/start-session', (req, res) => {
+  const { studyDay } = req.body;
+  const anonymousId = generateAnonymousId();
+  
+  const stmt = db.prepare("INSERT INTO study_sessions (anonymous_id, study_day) VALUES (?, ?)");
+  
+  stmt.run(anonymousId, studyDay, function(err) {
+    if (err) {
+      return res.status(500).json({ error: "Failed to create study session" });
+    }
+    
+    res.json({ 
+      success: true, 
+      anonymousId,
+      sessionId: this.lastID,
+      studyDay 
+    });
+  });
+});
+
+// Save survey responses
+app.post('/api/study/save-responses', (req, res) => {
+  const { sessionId, responses } = req.body;
+  
+  if (!sessionId || !responses) {
+    return res.status(400).json({ error: "Session ID and responses required" });
+  }
+  
+  // Insert all responses
+  const stmt = db.prepare("INSERT INTO survey_responses (session_id, question_key, answer_value) VALUES (?, ?, ?)");
+  
+  try {
+    // Start a transaction
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      
+      // Insert each response
+      Object.entries(responses).forEach(([key, value]) => {
+        if (value !== "" && value !== null && value !== undefined) {
+          stmt.run(sessionId, key, String(value));
+        }
+      });
+      
+      // Update session as completed
+      db.run("UPDATE study_sessions SET completed_at = CURRENT_TIMESTAMP WHERE id = ?", [sessionId]);
+      
+      db.run("COMMIT", (err) => {
+        if (err) {
+          db.run("ROLLBACK");
+          return res.status(500).json({ error: "Failed to save responses" });
+        }
+        
+        res.json({ success: true, message: "Responses saved successfully" });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to save responses" });
+  }
+});
+
+// Get study progress for an anonymous ID
+app.get('/api/study/progress/:anonymousId', (req, res) => {
+  const { anonymousId } = req.params;
+  
+  const query = `
+    SELECT s.study_day, s.completed_at, COUNT(sr.id) as response_count
+    FROM study_sessions s
+    LEFT JOIN survey_responses sr ON s.id = sr.session_id
+    WHERE s.anonymous_id = ?
+    GROUP BY s.id, s.study_day, s.completed_at
+    ORDER BY s.study_day
+  `;
+  
+  db.all(query, [anonymousId], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: "Failed to fetch progress" });
+    }
+    
+    res.json({ 
+      success: true, 
+      progress: rows,
+      totalDays: rows.length,
+      completedDays: rows.filter(row => row.completed_at).length
+    });
+  });
+});
+
+// Admin endpoint to export all study data
+app.get('/api/admin/export-data', (req, res) => {
+  // Simple authentication check (you should implement proper admin auth)
+  const { adminKey } = req.query;
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  
+  const query = `
+    SELECT 
+      s.anonymous_id,
+      s.study_day,
+      s.created_at as session_created,
+      s.completed_at as session_completed,
+      sr.question_key,
+      sr.answer_value,
+      sr.created_at as response_created
+    FROM study_sessions s
+    LEFT JOIN survey_responses sr ON s.id = sr.session_id
+    ORDER BY s.anonymous_id, s.study_day, sr.question_key
+  `;
+  
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: "Failed to export data" });
+    }
+    
+    // Convert to CSV format
+    const csvHeader = "anonymous_id,study_day,session_created,session_completed,question_key,answer_value,response_created\n";
+    const csvData = rows.map(row => 
+      `"${row.anonymous_id}","${row.study_day}","${row.session_created}","${row.session_completed}","${row.question_key}","${row.answer_value}","${row.response_created}"`
+    ).join('\n');
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="study_data.csv"');
+    res.send(csvHeader + csvData);
+  });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -5,6 +5,7 @@ import Login from './Login.jsx';
 import SoundscapePage from './pages/SoundscapePage';
 import UploadSound from './pages/UploadSound';
 import Survey from './pages/Survey';
+import Admin from './pages/Admin';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -52,6 +53,7 @@ function App() {
                   <UploadSound />
                 </ProtectedRoute>
               } />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </main>
         </div>
