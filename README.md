@@ -1,70 +1,69 @@
-# Local Development Setup Guide
+# Daily Sonification Study
 
-## ✅ Setup Complete!
+A React + Node.js application for conducting daily sonification studies with user authentication and data collection.
 
-Your local development environment is now ready! Both servers are running:
+## Quick Setup
 
-- **Backend**: http://localhost:3001
-- **Frontend**: http://localhost:5173
+### 1. Install nvm (Node Version Manager)
 
-## Using nvm (Node Version Manager)
+**macOS/Linux:**
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+```
 
-### Why nvm is Important
-- **Version Management**: Different projects may require different Node.js versions
-- **Isolation**: Each project can use its own Node.js version
-- **Easy Switching**: Switch between versions with `nvm use`
+**Windows:**
+Download and install from [nvm-windows](https://github.com/coreybutler/nvm-windows)
 
-### Project-Specific Node Version
-Your project has a `.nvmrc` file specifying Node.js version 22.16.0. Run:
+### 2. Install and Use Node.js
 
 ```bash
+# Install Node.js version specified in .nvmrc
+nvm install
 nvm use
+
+# Verify installation
+node --version
+npm --version
 ```
 
-This will automatically use the correct Node.js version for this project.
+### 3. Install Dependencies
 
-## Development Workflow
-
-### Quick Start (Recommended)
-
-**Start both servers simultaneously:**
 ```bash
-npm run dev
+# Install all project dependencies
+npm run install:all
 ```
 
-**Or start servers individually:**
+### 4. Setup Environment Files
 
-**Terminal 1 - Backend:**
-```bash
-npm run start:server
+**Backend (soundscape-server/.env):**
 ```
-
-**Terminal 2 - Frontend:**
-```bash
-npm run start:app
-```
-
-### Testing the Application
-
-1. **Open your browser** and go to http://localhost:5173
-2. **Create an account** by clicking "Sign Up"
-3. **Test the survey** by clicking "Start Creating"
-4. **Complete the survey** and verify data is saved
-5. **Test admin panel** at http://localhost:5173/admin
-
-### Environment Files
-
-**Backend (.env):**
-```
-JWT_SECRET=your-secure-jwt-secret-key-here-change-this-in-production
-ADMIN_KEY=your-secure-admin-key-here-change-this-in-production
+JWT_SECRET=your-secure-jwt-secret-key-here
+ADMIN_KEY=your-secure-admin-key-here
 PORT=3001
 ```
 
-**Frontend (.env):**
+**Frontend (soundscape-app/.env):**
 ```
 VITE_API_URL=http://localhost:3001
 ```
+
+### 5. Start the Application
+
+```bash
+# Start both servers
+npm run dev
+```
+
+**Access URLs:**
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3001
+
+### 6. Test the Application
+
+1. Go to http://localhost:5173
+2. Create an account (Sign Up)
+3. Complete the survey
+4. Check admin panel at http://localhost:5173/admin
 
 ## Troubleshooting
 
@@ -144,5 +143,3 @@ npm run check
 2. **Verify data saving** by checking the admin panel
 3. **Test the soundscape generation** after completing the survey
 4. **Prepare for deployment** by updating environment variables for production
-
-Your local development environment is now fully functional with proper Node.js version management!
