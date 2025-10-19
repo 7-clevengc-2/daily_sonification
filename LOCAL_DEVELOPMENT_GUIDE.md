@@ -14,31 +14,8 @@ Your local development environment is now ready! Both servers are running:
 - **Isolation**: Each project can use its own Node.js version
 - **Easy Switching**: Switch between versions with `nvm use`
 
-### nvm Commands You'll Use
-
-```bash
-# Load nvm (add this to your shell profile)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-# List installed versions
-nvm list
-
-# Use a specific version
-nvm use 22.16.0
-
-# Use the version specified in .nvmrc
-nvm use
-
-# Install a new version
-nvm install 20.10.0
-
-# Set default version
-nvm alias default 22.16.0
-```
-
 ### Project-Specific Node Version
-Your project now has a `.nvmrc` file specifying Node.js version 22.16.0. When you navigate to the project directory, you can run:
+Your project has a `.nvmrc` file specifying Node.js version 22.16.0. Run:
 
 ```bash
 nvm use
@@ -48,20 +25,23 @@ This will automatically use the correct Node.js version for this project.
 
 ## Development Workflow
 
-### Starting the Servers
+### Quick Start (Recommended)
+
+**Start both servers simultaneously:**
+```bash
+npm run dev
+```
+
+**Or start servers individually:**
 
 **Terminal 1 - Backend:**
 ```bash
-cd /Users/tclevenger/Projects/daily_sonification/soundscape-server
-export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-npm start
+npm run start:server
 ```
 
 **Terminal 2 - Frontend:**
 ```bash
-cd /Users/tclevenger/Projects/daily_sonification/soundscape-app
-export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-npm run dev
+npm run start:app
 ```
 
 ### Testing the Application
@@ -91,7 +71,7 @@ VITE_API_URL=http://localhost:3001
 ### Common Issues
 
 1. **"command not found: npm"**
-   - Solution: Load nvm first: `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"`
+   - Solution: Run `nvm use` to load the correct Node.js version
 
 2. **Port already in use**
    - Backend: Change PORT in soundscape-server/.env
@@ -109,17 +89,14 @@ VITE_API_URL=http://localhost:3001
 
 ```bash
 # Check if servers are running
-curl http://localhost:3001/protected
-curl http://localhost:5173
+npm run check
 
-# Check Node.js version
-node --version
+# Check individual servers
+npm run check:server
+npm run check:app
 
-# Check npm version
-npm --version
-
-# List all nvm versions
-nvm list
+# Install all dependencies
+npm run install:all
 
 # Use project-specific Node version
 nvm use
@@ -136,19 +113,16 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 ```
 
-### 2. Project Navigation
+### 2. Quick Commands
 ```bash
-# Quick navigation to project
-cd /Users/tclevenger/Projects/daily_sonification
-
 # Use correct Node version
 nvm use
 
-# Start backend
-cd soundscape-server && npm start
+# Start both servers
+npm run dev
 
-# Start frontend (in new terminal)
-cd soundscape-app && npm run dev
+# Check server status
+npm run check
 ```
 
 ### 3. Database Management

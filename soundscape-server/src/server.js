@@ -37,13 +37,14 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
   password TEXT
 )`);
 
-// Create study sessions table for anonymous tracking
+// Create study sessions table for user tracking
 db.run(`CREATE TABLE IF NOT EXISTS study_sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  anonymous_id TEXT UNIQUE,
+  user_id INTEGER,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   study_day INTEGER,
-  completed_at DATETIME
+  completed_at DATETIME,
+  FOREIGN KEY (user_id) REFERENCES users (id)
 )`);
 
 // Create survey responses table
@@ -133,28 +134,22 @@ app.post('/logout', (req, res) => {
 });
 
 // Study API endpoints
-const crypto = require('crypto');
-
-// Generate anonymous ID for study participants
-function generateAnonymousId() {
-  return crypto.randomUUID();
-}
 
 // Start a new study session
-app.post('/api/study/start-session', (req, res) => {
+app.post('/api/study/start-session', authenticateToken, (req, res) => {
   const { studyDay } = req.body;
-  const anonymousId = generateAnonymousId();
+  const userId = req.user.id;
   
-  const stmt = db.prepare("INSERT INTO study_sessions (anonymous_id, study_day) VALUES (?, ?)");
+  const stmt = db.prepare("INSERT INTO study_sessions (user_id, study_day) VALUES (?, ?)");
   
-  stmt.run(anonymousId, studyDay, function(err) {
+  stmt.run(userId, studyDay, function(err) {
     if (err) {
       return res.status(500).json({ error: "Failed to create study session" });
     }
     
     res.json({ 
       success: true, 
-      anonymousId,
+      userId,
       sessionId: this.lastID,
       studyDay 
     });
@@ -201,20 +196,20 @@ app.post('/api/study/save-responses', (req, res) => {
   }
 });
 
-// Get study progress for an anonymous ID
-app.get('/api/study/progress/:anonymousId', (req, res) => {
-  const { anonymousId } = req.params;
+// Get study progress for authenticated user
+app.get('/api/study/progress', authenticateToken, (req, res) => {
+  const userId = req.user.id;
   
   const query = `
     SELECT s.study_day, s.completed_at, COUNT(sr.id) as response_count
     FROM study_sessions s
     LEFT JOIN survey_responses sr ON s.id = sr.session_id
-    WHERE s.anonymous_id = ?
+    WHERE s.user_id = ?
     GROUP BY s.id, s.study_day, s.completed_at
     ORDER BY s.study_day
   `;
   
-  db.all(query, [anonymousId], (err, rows) => {
+  db.all(query, [userId], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: "Failed to fetch progress" });
     }
@@ -238,7 +233,8 @@ app.get('/api/admin/export-data', (req, res) => {
   
   const query = `
     SELECT 
-      s.anonymous_id,
+      s.user_id,
+      u.username,
       s.study_day,
       s.created_at as session_created,
       s.completed_at as session_completed,
@@ -247,7 +243,8 @@ app.get('/api/admin/export-data', (req, res) => {
       sr.created_at as response_created
     FROM study_sessions s
     LEFT JOIN survey_responses sr ON s.id = sr.session_id
-    ORDER BY s.anonymous_id, s.study_day, sr.question_key
+    LEFT JOIN users u ON s.user_id = u.id
+    ORDER BY s.user_id, s.study_day, sr.question_key
   `;
   
   db.all(query, [], (err, rows) => {
@@ -256,9 +253,9 @@ app.get('/api/admin/export-data', (req, res) => {
     }
     
     // Convert to CSV format
-    const csvHeader = "anonymous_id,study_day,session_created,session_completed,question_key,answer_value,response_created\n";
+    const csvHeader = "user_id,username,study_day,session_created,session_completed,question_key,answer_value,response_created\n";
     const csvData = rows.map(row => 
-      `"${row.anonymous_id}","${row.study_day}","${row.session_created}","${row.session_completed}","${row.question_key}","${row.answer_value}","${row.response_created}"`
+      `"${row.user_id}","${row.username}","${row.study_day}","${row.session_created}","${row.session_completed}","${row.question_key}","${row.answer_value}","${row.response_created}"`
     ).join('\n');
     
     res.setHeader('Content-Type', 'text/csv');

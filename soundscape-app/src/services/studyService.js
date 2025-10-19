@@ -7,10 +7,12 @@ class StudyService {
 
   async startStudySession(studyDay) {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${this.baseUrl}/api/study/start-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ studyDay }),
       });
@@ -47,9 +49,14 @@ class StudyService {
     }
   }
 
-  async getStudyProgress(anonymousId) {
+  async getStudyProgress() {
     try {
-      const response = await fetch(`${this.baseUrl}/api/study/progress/${anonymousId}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${this.baseUrl}/api/study/progress`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch study progress');
@@ -62,16 +69,7 @@ class StudyService {
     }
   }
 
-  // Store anonymous ID in localStorage for persistence across sessions
-  setAnonymousId(anonymousId) {
-    localStorage.setItem('study_anonymous_id', anonymousId);
-  }
-
-  getAnonymousId() {
-    return localStorage.getItem('study_anonymous_id');
-  }
-
-  // Store current study day
+  // Store current study day in localStorage for user convenience
   setCurrentStudyDay(day) {
     localStorage.setItem('study_current_day', day.toString());
   }

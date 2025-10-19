@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Tone from "tone";
 import studyService from "../services/studyService";
+import { useAuth } from "../AuthContext";
 
 //Objects for each survey question
 // Questions is the test displayed to the user, options is an array of possible answers,
@@ -73,6 +74,7 @@ function getIndexFromAnswer(list, answer) {
 }
 
 function Survey() {
+  const { isAuthenticated, user } = useAuth();
   const [step, setStep] = useState(0); // tracks the question the user is on starting at 0
   const [answers, setAnswers] = useState({
     weather: "",
@@ -93,7 +95,6 @@ function Survey() {
   
   // Study session state
   const [sessionId, setSessionId] = useState(null);
-  const [anonymousId, setAnonymousId] = useState(null);
   const [studyDay, setStudyDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -109,28 +110,20 @@ function Survey() {
   // Initialize study session on component mount
   useEffect(() => {
     const initializeStudySession = async () => {
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+        console.error('User must be logged in to participate in the study');
+        navigate('/login');
+        return;
+      }
+
       try {
-        // Check if we have an existing anonymous ID
-        let currentAnonymousId = studyService.getAnonymousId();
-        let currentStudyDay = studyService.getCurrentStudyDay();
+        const currentStudyDay = studyService.getCurrentStudyDay();
         
-        // If no anonymous ID, start a new session
-        if (!currentAnonymousId) {
-          const sessionData = await studyService.startStudySession(currentStudyDay);
-          currentAnonymousId = sessionData.anonymousId;
-          studyService.setAnonymousId(currentAnonymousId);
-          setSessionId(sessionData.sessionId);
-          setAnonymousId(currentAnonymousId);
-          setStudyDay(currentStudyDay);
-        } else {
-          // Use existing session data
-          setAnonymousId(currentAnonymousId);
-          setStudyDay(currentStudyDay);
-          // For existing users, we might want to create a new session for the current day
-          // This depends on your study design - whether each day is a new session
-          const sessionData = await studyService.startStudySession(currentStudyDay);
-          setSessionId(sessionData.sessionId);
-        }
+        // Start a new session for the current day
+        const sessionData = await studyService.startStudySession(currentStudyDay);
+        setSessionId(sessionData.sessionId);
+        setStudyDay(currentStudyDay);
       } catch (error) {
         console.error('Failed to initialize study session:', error);
         // Continue with survey even if session creation fails
@@ -138,7 +131,7 @@ function Survey() {
     };
 
     initializeStudySession();
-  }, []);
+  }, [isAuthenticated, navigate]);
 
   // Helper to stop and dispose the current player
   function stopAndDisposePlayer(playerRef) {
@@ -325,7 +318,7 @@ function Survey() {
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
       <h2>Daily Soundscape Survey</h2>
-      {anonymousId && (
+      {user && (
         <div style={{ 
           marginBottom: "1rem", 
           padding: "0.5rem 1rem", 
@@ -334,7 +327,7 @@ function Survey() {
           fontSize: "0.9rem",
           color: "#666"
         }}>
-          Study Day {studyDay} of 9
+          Study Day {studyDay} of 9 - User: {user.username}
         </div>
       )}
       <div style={{ margin: "2rem 0" }}>

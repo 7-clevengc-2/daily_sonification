@@ -8,41 +8,41 @@ This guide explains how to set up and run your daily sonification study using th
 ### 1. Database Schema
 Added two new tables to store study data:
 
-- **`study_sessions`**: Tracks anonymous study participants and their daily sessions
+- **`study_sessions`**: Tracks authenticated users and their daily sessions
 - **`survey_responses`**: Stores individual survey responses linked to sessions
 
-### 2. Anonymous Identity System
-- Each study participant gets a unique anonymous ID (UUID)
-- No personally identifiable information is stored
-- Participants can be tracked across the 9-day study period
-- Anonymous IDs are stored in browser localStorage for persistence
+### 2. User Authentication System
+- Study participants must create accounts and log in
+- User accounts contain only username and password (no personal information)
+- Participants can be tracked across the 9-day study period using their user ID
+- Authentication ensures reliable tracking across devices and browser sessions
 
 ### 3. Backend API Endpoints
 New endpoints added to the server:
 
-- `POST /api/study/start-session` - Creates a new study session
+- `POST /api/study/start-session` - Creates a new study session (requires authentication)
 - `POST /api/study/save-responses` - Saves survey responses
-- `GET /api/study/progress/:anonymousId` - Gets study progress for a participant
+- `GET /api/study/progress` - Gets study progress for authenticated user
 - `GET /api/admin/export-data` - Exports all study data (admin only)
 
 ### 4. Frontend Integration
 - Survey responses are now automatically saved to the database
 - Study day tracking (1-9) with progress indicators
-- Anonymous ID persistence across browser sessions
+- User authentication required for study participation
 - Loading states during data saving
 
 ## Study Workflow
 
 ### For Participants:
-1. **First Visit**: Anonymous ID is generated and stored
-2. **Daily Survey**: Complete survey for each of 9 days
-3. **Progress Tracking**: System tracks which days are completed
+1. **Account Creation**: Create a username and password account
+2. **Daily Survey**: Log in and complete survey for each of 9 days
+3. **Progress Tracking**: System tracks which days are completed per user
 4. **Soundscape Creation**: Survey responses create personalized soundscapes
 
 ### For Researchers:
 1. **Data Collection**: All responses automatically saved to database
 2. **Data Export**: Use admin panel to export CSV data
-3. **Analysis**: Data includes anonymous IDs for correlation analysis
+3. **Analysis**: Data includes user IDs and usernames for correlation analysis
 
 ## Deployment on Render
 
@@ -85,13 +85,13 @@ VITE_API_URL=https://your-render-server-name.onrender.com
 
 ### CSV Export Format:
 ```csv
-anonymous_id,study_day,session_created,session_completed,question_key,answer_value,response_created
-uuid-123,1,2024-01-01 10:00:00,2024-01-01 10:05:00,weather,Sunny,2024-01-01 10:05:00
-uuid-123,1,2024-01-01 10:00:00,2024-01-01 10:05:00,place,City,2024-01-01 10:05:00
+user_id,username,study_day,session_created,session_completed,question_key,answer_value,response_created
+1,participant1,1,2024-01-01 10:00:00,2024-01-01 10:05:00,weather,Sunny,2024-01-01 10:05:00
+1,participant1,1,2024-01-01 10:00:00,2024-01-01 10:05:00,place,City,2024-01-01 10:05:00
 ```
 
 ### Data Analysis:
-- **Participant Tracking**: Use `anonymous_id` to group responses by participant
+- **Participant Tracking**: Use `user_id` or `username` to group responses by participant
 - **Day Progression**: Use `study_day` to track daily responses
 - **Response Analysis**: Use `question_key` and `answer_value` for analysis
 - **Completion Status**: Check `session_completed` for participation rates
@@ -105,23 +105,23 @@ uuid-123,1,2024-01-01 10:00:00,2024-01-01 10:05:00,place,City,2024-01-01 10:05:0
 4. Monitor participation via admin panel
 
 ### During the Study:
-- Participants access the site daily for 9 days
-- Each day creates a new session with the same anonymous ID
+- Participants log in and access the site daily for 9 days
+- Each day creates a new session linked to their user account
 - Survey responses are automatically saved
-- Progress is tracked per participant
+- Progress is tracked per user account
 
 ### After the Study:
 1. Use admin panel to export all data
 2. Analyze responses using the CSV data
-3. Correlate responses by anonymous ID for longitudinal analysis
+3. Correlate responses by user ID for longitudinal analysis
 
 ## Security Considerations
 
-### Anonymous Data:
-- No personal information is collected
-- Anonymous IDs are randomly generated UUIDs
-- No way to identify individual participants
+### User Data:
+- Only username and password are collected (no personal information)
+- User accounts are required for study participation
 - Data is suitable for research analysis
+- Participants can be tracked reliably across sessions
 
 ### Admin Access:
 - Admin key required for data export
@@ -132,7 +132,7 @@ uuid-123,1,2024-01-01 10:00:00,2024-01-01 10:05:00,place,City,2024-01-01 10:05:0
 
 ### Common Issues:
 1. **Survey not saving**: Check network connection and API endpoint configuration
-2. **Anonymous ID lost**: Participants will get a new ID if localStorage is cleared
+2. **Authentication required**: Participants must be logged in to participate
 3. **Export fails**: Verify admin key and server connectivity
 
 ### Monitoring:
