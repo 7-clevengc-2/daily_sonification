@@ -126,7 +126,13 @@ function Survey() {
         setStudyDay(currentStudyDay);
       } catch (error) {
         console.error('Failed to initialize study session:', error);
-        // Continue with survey even if session creation fails
+        // If authentication error, redirect to login
+        if (error.message && (error.message.includes('expired') || error.message.includes('invalid') || error.message.includes('token'))) {
+          alert('Your session has expired. Please log in again.');
+          navigate('/login');
+          return;
+        }
+        // Continue with survey even if session creation fails (user can still complete survey)
       }
     };
 

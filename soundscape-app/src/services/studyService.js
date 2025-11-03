@@ -8,6 +8,11 @@ class StudyService {
   async startStudySession(studyDay) {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
       const response = await fetch(`${this.baseUrl}/api/study/start-session`, {
         method: 'POST',
         headers: {
@@ -18,7 +23,11 @@ class StudyService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start study session');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 403) {
+          throw new Error('Authentication token expired or invalid. Please log in again.');
+        }
+        throw new Error(errorData.error || errorData.details || 'Failed to start study session');
       }
 
       return await response.json();
@@ -30,10 +39,12 @@ class StudyService {
 
   async saveSurveyResponses(sessionId, responses) {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${this.baseUrl}/api/study/save-responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ sessionId, responses }),
       });
