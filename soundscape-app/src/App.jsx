@@ -22,6 +22,7 @@ function App() {
                 <li><Link to="/soundscape" className="nav-link">Soundscape</Link></li>
                 <li><Link to="/survey" className="nav-link">Survey</Link></li>
                 <li><Link to="/upload" className="nav-link">Upload</Link></li>
+                <li><Link to="/admin" className="nav-link">Admin</Link></li>
                 <li style={{ marginLeft: "auto" }}>
                   <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                     <Link to="/login" className="nav-link">Login</Link>
@@ -53,7 +54,11 @@ function App() {
                   <UploadSound />
                 </ProtectedRoute>
               } />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              } />
             </Routes>
           </main>
         </div>

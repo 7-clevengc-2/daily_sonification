@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: soundscape-app
+    env: node
+    rootDir: soundscape-app
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: PORT
+        value: 10000
+

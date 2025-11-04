@@ -19,15 +19,24 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 // History API fallback: serve index.html for all routes
-app.get('*', (req, res) => {
-  // Don't serve index.html for API routes or file requests
-  if (req.path.startsWith('/api/') || req.path.includes('.')) {
+// This must come AFTER static file middleware
+app.use((req, res, next) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not found' });
   }
   
+  // Skip if it's a file request (has extension and isn't already handled)
+  const hasFileExtension = /\.[a-zA-Z0-9]+$/.test(req.path);
+  if (hasFileExtension && !req.path.startsWith('/assets/')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
+  // Serve index.html for all other routes (client-side routing)
   const indexPath = join(distPath, 'index.html');
   try {
     const indexHtml = readFileSync(indexPath, 'utf-8');
+    res.setHeader('Content-Type', 'text/html');
     res.send(indexHtml);
   } catch (err) {
     console.error('Error serving index.html:', err);
