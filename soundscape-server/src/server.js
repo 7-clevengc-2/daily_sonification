@@ -31,10 +31,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Define the frontend build directory path
-// In production, the frontend is built and served from the dist folder
-const frontendPath = path.join(__dirname, '../../soundscape-app/dist');
-
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -356,52 +352,17 @@ app.get('/api/admin/export-data', (req, res) => {
   });
 });
 
-// Handle favicon.ico requests (browsers automatically request this)
-// This should come before static middleware to avoid 404s
+// Handle favicon.ico requests (return 204 to avoid 404 errors in logs)
 app.get('/favicon.ico', (req, res) => {
-  const faviconPath = path.join(frontendPath, 'favicon.ico');
-  res.sendFile(faviconPath, (err) => {
-    // If favicon.ico doesn't exist, try vite.svg or return 204 (no content)
-    if (err) {
-      const svgPath = path.join(frontendPath, 'vite.svg');
-      res.sendFile(svgPath, (svgErr) => {
-        if (svgErr) {
-          // Return 204 No Content if no favicon found
-          res.status(204).end();
-        }
-      });
-    }
-  });
+  res.status(204).end();
 });
 
-// Serve static files from the React app build directory
-// This should come after API routes but before the catch-all route
-app.use(express.static(frontendPath));
-
-// The catchall handler: send back React's index.html file for any non-API routes
-// This allows React Router to handle client-side routing
-// Use app.use() with a function instead of app.get('*') for Express 5 compatibility
-app.use((req, res, next) => {
-  // Don't serve index.html for API routes
+// Return 404 for all non-API routes (frontend is served separately)
+app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API route not found' });
   }
-  
-  // Don't serve index.html for static file requests (they should be handled by static middleware)
-  // Skip if it's a file extension request (like .js, .css, .png, etc.)
-  const hasFileExtension = /\.[a-zA-Z0-9]+$/.test(req.path);
-  if (hasFileExtension) {
-    return res.status(404).send('File not found');
-  }
-  
-  // Serve index.html for all other routes (client-side routing)
-  const indexPath = path.join(frontendPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error('Error serving index.html:', err);
-      res.status(500).send('Error loading application');
-    }
-  });
+  res.status(404).json({ error: 'Not found' });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
