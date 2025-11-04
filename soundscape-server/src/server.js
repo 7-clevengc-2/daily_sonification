@@ -380,10 +380,18 @@ app.use(express.static(frontendPath));
 
 // The catchall handler: send back React's index.html file for any non-API routes
 // This allows React Router to handle client-side routing
-app.get('*', (req, res) => {
+// Use app.use() with a function instead of app.get('*') for Express 5 compatibility
+app.use((req, res, next) => {
   // Don't serve index.html for API routes
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API route not found' });
+  }
+  
+  // Don't serve index.html for static file requests (they should be handled by static middleware)
+  // Skip if it's a file extension request (like .js, .css, .png, etc.)
+  const hasFileExtension = /\.[a-zA-Z0-9]+$/.test(req.path);
+  if (hasFileExtension) {
+    return res.status(404).send('File not found');
   }
   
   // Serve index.html for all other routes (client-side routing)
