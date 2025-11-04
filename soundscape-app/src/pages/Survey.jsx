@@ -1,6 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Tone from "tone";
+import studyService from "../services/studyService";
+import { useAuth } from "../AuthContext";
 
 //Objects for each survey question
 // Questions is the test displayed to the user, options is an array of possible answers,
@@ -72,6 +74,7 @@ function getIndexFromAnswer(list, answer) {
 }
 
 function Survey() {
+  const { isAuthenticated, user } = useAuth();
   const [step, setStep] = useState(0); // tracks the question the user is on starting at 0
   const [answers, setAnswers] = useState({
     weather: "",
@@ -89,6 +92,11 @@ function Survey() {
     tempo: 120,
   }); // Stores the users answer to each question
   const navigate = useNavigate(); // used to navigate to another page once the survey is complete
+  
+  // Study session state
+  const [sessionId, setSessionId] = useState(null);
+  const [studyDay, setStudyDay] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Track if the user has interacted with the tempo slider
   const [tempoTouched, setTempoTouched] = useState(false);
@@ -98,6 +106,38 @@ function Survey() {
   const placePlayerRef = useRef(null);
   const moodPlayerRef = useRef(null);
   const objectUrlsRef = useRef([]); // track created object URLs to revoke (only if discarded)
+
+  // Initialize study session on component mount
+  useEffect(() => {
+    const initializeStudySession = async () => {
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+        console.error('User must be logged in to participate in the study');
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const currentStudyDay = studyService.getCurrentStudyDay();
+        
+        // Start a new session for the current day
+        const sessionData = await studyService.startStudySession(currentStudyDay);
+        setSessionId(sessionData.sessionId);
+        setStudyDay(currentStudyDay);
+      } catch (error) {
+        console.error('Failed to initialize study session:', error);
+        // If authentication error, redirect to login
+        if (error.message && (error.message.includes('expired') || error.message.includes('invalid') || error.message.includes('token'))) {
+          alert('Your session has expired. Please log in again.');
+          navigate('/login');
+          return;
+        }
+        // Continue with survey even if session creation fails (user can still complete survey)
+      }
+    };
+
+    initializeStudySession();
+  }, [isAuthenticated, navigate]);
 
   // Helper to stop and dispose the current player
   function stopAndDisposePlayer(playerRef) {
@@ -145,6 +185,13 @@ function Survey() {
     }
     if (!soundUrl) return;
 
+    // Start Tone.js AudioContext after user interaction
+    try {
+      await Tone.start();
+    } catch (error) {
+      console.log("AudioContext already started or user interaction required");
+    }
+
     /*
     stopAndDisposePlayer();
     try {
@@ -180,7 +227,9 @@ function Survey() {
       stopAndDisposePlayer(playerRef);
       try {
         await Tone.start();
-      } catch (_) {}
+      } catch (error) {
+        console.log("AudioContext already started or user interaction required");
+      }
       const player = new Tone.Player({ url, loop: true }).toDestination();
       player.autostart = true;
       playerRef.current = player;
@@ -230,18 +279,40 @@ function Survey() {
   }
 
   // Continue to next question or submit
-  function handleContinue() {
+  async function handleContinue() {
     const key = questions[step].key;
     if (step < questions.length - 1) {
       setStep(step + 1);
       setTempoTouched(false); // reset for next time tempo appears
     } else {
-      // Stop and dispose all players before navigating away
-      stopAndDisposePlayer(weatherPlayerRef);
-      stopAndDisposePlayer(placePlayerRef);
-      stopAndDisposePlayer(moodPlayerRef);
-      // Go to soundscape page with answers
-      navigate("/soundscape", { state: { ...answers } });
+      // Final step - save responses and navigate
+      setIsSaving(true);
+      
+      try {
+        // Stop and dispose all players before navigating away
+        stopAndDisposePlayer(weatherPlayerRef);
+        stopAndDisposePlayer(placePlayerRef);
+        stopAndDisposePlayer(moodPlayerRef);
+        
+        // Save responses to backend if we have a session
+        if (sessionId) {
+          await studyService.saveSurveyResponses(sessionId, answers);
+          console.log('Survey responses saved successfully');
+        }
+        
+        // Increment study day for next time
+        const nextDay = studyService.incrementStudyDay();
+        console.log(`Study day incremented to: ${nextDay}`);
+        
+        // Go to soundscape page with answers
+        navigate("/soundscape", { state: { ...answers } });
+      } catch (error) {
+        console.error('Failed to save survey responses:', error);
+        // Still navigate to soundscape page even if save fails
+        navigate("/soundscape", { state: { ...answers } });
+      } finally {
+        setIsSaving(false);
+      }
     }
   }
 
@@ -252,7 +323,19 @@ function Survey() {
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h2>Daily Soundscape Survey</h2> 
+      <h2>Daily Soundscape Survey</h2>
+      {user && (
+        <div style={{ 
+          marginBottom: "1rem", 
+          padding: "0.5rem 1rem", 
+          backgroundColor: "#f8f9fa", 
+          borderRadius: "4px",
+          fontSize: "0.9rem",
+          color: "#666"
+        }}>
+          Study Day {studyDay} of 9 - User: {user.username}
+        </div>
+      )}
       <div style={{ margin: "2rem 0" }}>
         <h3>{questions[step].question}</h3>
         {/* Render volume sliders for the final question */}
@@ -356,19 +439,19 @@ function Survey() {
         )}
         <button
           onClick={handleContinue}
-          disabled={!isAnswered}
+          disabled={!isAnswered || isSaving}
           style={{
             marginTop: "2rem",
             padding: "0.75rem 2rem",
             fontSize: "1.1rem",
             borderRadius: "6px",
             border: "1px solid #007bff",
-            background: isAnswered ? "#007bff" : "#e0e0e0",
-            color: isAnswered ? "#fff" : "#888",
-            cursor: isAnswered ? "pointer" : "not-allowed"
+            background: (isAnswered && !isSaving) ? "#007bff" : "#e0e0e0",
+            color: (isAnswered && !isSaving) ? "#fff" : "#888",
+            cursor: (isAnswered && !isSaving) ? "pointer" : "not-allowed"
           }}
         >
-          {step < questions.length - 1 ? "Continue" : "Finish"}
+          {isSaving ? "Saving..." : (step < questions.length - 1 ? "Continue" : "Finish")}
         </button>
       </div>
       <div>Step {step + 1} of {questions.length}</div> {/* Current step out of total steps */}

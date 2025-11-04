@@ -1,0 +1,23 @@
+{
+  "name": "daily-sonification",
+  "version": "1.0.0",
+  "description": "Daily Sonification Study - Soundscape Generation App",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:app\"",
+    "dev:server": "cd soundscape-server && npm run dev",
+    "dev:app": "cd soundscape-app && npm run dev",
+    "start:server": "cd soundscape-server && npm start",
+    "start:app": "cd soundscape-app && npm run dev",
+    "check:server": "cd soundscape-server && npm run check",
+    "check:app": "cd soundscape-app && npm run check",
+    "check": "npm run check:server && npm run check:app",
+    "install:all": "cd soundscape-server && npm install && cd ../soundscape-app && npm install",
+    "build": "cd soundscape-app && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["sonification", "soundscape", "study", "research"],
+  "author": "Catelyn Clevenger",
+  "license": "ISC"
+}
