@@ -4,6 +4,7 @@ const sqlite3 = require('sqlite3').verbose();  //database
 const bcrypt = require('bcryptjs');  // Hashes passwords for security
 const cors = require('cors'); // Prevents access to daily sonification features until signed in
 const jwt = require('jsonwebtoken'); // jsonwebtoken acts as a proof of authentication after the user signs in
+const path = require('path'); // For handling file paths
 
 const app = express();
 const db = new sqlite3.Database('./users.db');
@@ -29,6 +30,10 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Define the frontend build directory path
+// In production, the frontend is built and served from the dist folder
+const frontendPath = path.join(__dirname, '../../soundscape-app/dist');
 
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -348,6 +353,46 @@ app.get('/api/admin/export-data', (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="study_data.csv"');
     res.send(csvHeader + csvData);
+  });
+});
+
+// Handle favicon.ico requests (browsers automatically request this)
+// This should come before static middleware to avoid 404s
+app.get('/favicon.ico', (req, res) => {
+  const faviconPath = path.join(frontendPath, 'favicon.ico');
+  res.sendFile(faviconPath, (err) => {
+    // If favicon.ico doesn't exist, try vite.svg or return 204 (no content)
+    if (err) {
+      const svgPath = path.join(frontendPath, 'vite.svg');
+      res.sendFile(svgPath, (svgErr) => {
+        if (svgErr) {
+          // Return 204 No Content if no favicon found
+          res.status(204).end();
+        }
+      });
+    }
+  });
+});
+
+// Serve static files from the React app build directory
+// This should come after API routes but before the catch-all route
+app.use(express.static(frontendPath));
+
+// The catchall handler: send back React's index.html file for any non-API routes
+// This allows React Router to handle client-side routing
+app.get('*', (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API route not found' });
+  }
+  
+  // Serve index.html for all other routes (client-side routing)
+  const indexPath = path.join(frontendPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(500).send('Error loading application');
+    }
   });
 });
 
