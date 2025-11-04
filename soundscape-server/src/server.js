@@ -100,19 +100,40 @@ db.run(`CREATE TABLE IF NOT EXISTS survey_responses (
 // Signup
 app.post('/signup', (req, res) => {
   const { username, password } = req.body;
+  
+  // Validate input
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required" });
+  }
+  
+  if (username.trim().length === 0 || password.trim().length === 0) {
+    return res.status(400).json({ error: "Username and password cannot be empty" });
+  }
+  
+  // Hash password
   const hashed = bcrypt.hashSync(password, 10);
   const stmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
 
-  stmt.run(username, hashed, function (err) {
+  stmt.run(username.trim(), hashed, function (err) {
     if (err) {
-      return res.status(400).json({ error: "User already exists" });
+      console.error('Signup error:', err);
+      // Check if it's a unique constraint violation
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+      return res.status(500).json({ error: "Failed to create user account" });
     }
     
     // Create user object without password
-    const user = { id: this.lastID, username };
+    const user = { id: this.lastID, username: username.trim() };
     
     // Generate JWT token
     const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+    
+    console.log(`User created: ${username} (ID: ${this.lastID})`);
+    
+    // Finalize the statement
+    stmt.finalize();
     
     res.json({ 
       success: true, 
@@ -125,17 +146,38 @@ app.post('/signup', (req, res) => {
 // Login
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
-    if (err || !user) return res.status(401).json({ error: "Invalid credentials" });
+  
+  // Validate input
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required" });
+  }
+  
+  // Query database for user
+  db.get("SELECT * FROM users WHERE username = ?", [username.trim()], (err, user) => {
+    if (err) {
+      console.error('Login database error:', err);
+      return res.status(500).json({ error: "Database error occurred" });
+    }
+    
+    if (!user) {
+      console.log(`Login attempt failed: user not found - ${username}`);
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
+    // Compare password
     const valid = bcrypt.compareSync(password, user.password);
-    if (!valid) return res.status(401).json({ error: "Invalid credentials" });
+    if (!valid) {
+      console.log(`Login attempt failed: invalid password for user - ${username}`);
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
     // Create user object without password
     const userData = { id: user.id, username: user.username };
     
     // Generate JWT token
     const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '24h' });
+
+    console.log(`User logged in: ${user.username} (ID: ${user.id})`);
 
     res.json({ 
       success: true, 

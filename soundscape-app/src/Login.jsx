@@ -18,7 +18,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${config.apiBaseUrl}/login`, { username, password });
+      // Trim username to match what was saved during signup
+      const trimmedUsername = username.trim();
+      const res = await axios.post(`${config.apiBaseUrl}/login`, { 
+        username: trimmedUsername, 
+        password 
+      });
       
       // Store authentication data
       login(res.data.user, res.data.token);
@@ -26,6 +31,7 @@ export default function Login() {
       // Redirect to survey page
       navigate('/survey');
     } catch (e) {
+      console.error('Login error:', e.response?.data || e.message);
       setError(e.response?.data?.error || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
