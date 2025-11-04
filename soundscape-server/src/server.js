@@ -35,7 +35,11 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE,
   password TEXT
-)`);
+)`, (err) => {
+  if (err) {
+    console.error('Error creating users table:', err.message);
+  }
+});
 
 // Create study sessions table for user tracking
 db.run(`CREATE TABLE IF NOT EXISTS study_sessions (
@@ -45,16 +49,22 @@ db.run(`CREATE TABLE IF NOT EXISTS study_sessions (
   study_day INTEGER,
   completed_at DATETIME,
   FOREIGN KEY (user_id) REFERENCES users (id)
-)`);
-
-// Migrate existing table: add user_id column if it doesn't exist
-db.run(`ALTER TABLE study_sessions ADD COLUMN user_id INTEGER`, (err) => {
-  // Ignore error if column already exists
+)`, (err) => {
   if (err) {
-    const errorMsg = err.message.toLowerCase();
-    if (!errorMsg.includes('duplicate') && !errorMsg.includes('already exists') && !errorMsg.includes('no such column')) {
-      console.error('Error adding user_id column:', err.message);
-    }
+    console.error('Error creating study_sessions table:', err.message);
+  } else {
+    // Migrate existing table: add user_id column if it doesn't exist
+    // Only run migration after table is confirmed to exist
+    db.run(`ALTER TABLE study_sessions ADD COLUMN user_id INTEGER`, (alterErr) => {
+      // Ignore error if column already exists or table doesn't exist yet
+      if (alterErr) {
+        const errorMsg = alterErr.message.toLowerCase();
+        // Only log if it's not a duplicate column error or table doesn't exist
+        if (!errorMsg.includes('duplicate') && !errorMsg.includes('already exists') && !errorMsg.includes('no such column') && !errorMsg.includes('no such table')) {
+          console.error('Error adding user_id column:', alterErr.message);
+        }
+      }
+    });
   }
 });
 
@@ -67,18 +77,22 @@ db.run(`CREATE TABLE IF NOT EXISTS survey_responses (
   answer_value TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (session_id) REFERENCES study_sessions (id)
-)`);
-
-// Add username column if it doesn't exist (for existing databases)
-// SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we handle the error
-db.run(`ALTER TABLE survey_responses ADD COLUMN username TEXT`, (err) => {
-  // Ignore error if column already exists
+)`, (err) => {
   if (err) {
-    // SQLite error messages vary, so we check for common patterns
-    const errorMsg = err.message.toLowerCase();
-    if (!errorMsg.includes('duplicate') && !errorMsg.includes('already exists') && !errorMsg.includes('no such column')) {
-      console.error('Error adding username column:', err.message);
-    }
+    console.error('Error creating survey_responses table:', err.message);
+  } else {
+    // Add username column if it doesn't exist (for existing databases)
+    // Only run migration after table is confirmed to exist
+    db.run(`ALTER TABLE survey_responses ADD COLUMN username TEXT`, (alterErr) => {
+      // Ignore error if column already exists or table doesn't exist yet
+      if (alterErr) {
+        const errorMsg = alterErr.message.toLowerCase();
+        // Only log if it's not a duplicate column error or table doesn't exist
+        if (!errorMsg.includes('duplicate') && !errorMsg.includes('already exists') && !errorMsg.includes('no such column') && !errorMsg.includes('no such table')) {
+          console.error('Error adding username column:', alterErr.message);
+        }
+      }
+    });
   }
 });
 
