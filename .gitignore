@@ -101,12 +101,7 @@ Desktop.ini
 # Local files
 *.local
 
-# Sound files (if they're large)
-*.wav
-*.mp3
-*.flac
-*.aac
-*.ogg
+
 
 # Keep specific sound files if needed
 !soundscape-app/public/sounds/*.wav 
