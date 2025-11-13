@@ -11,6 +11,16 @@ function getIndexFromAnswer(list, answer) {
   return list.findIndex(obj => Object.keys(obj)[0].toLowerCase() === answer?.toLowerCase());
 }
 
+// Convert pitch value (0-100) to detune in cents (-600 to +600)
+// Detune uses cents, where 100 cents = 1 semitone
+function pitchToDetune(pitch) {
+  // Map 0-100 to -6 to +6 semitones, then convert to cents
+  // 0 (all necessary) = -6 semitones = -600 cents (lower pitch)
+  // 50 (balanced) = 0 semitones = 0 cents (no change)
+  // 100 (all nonessential) = +6 semitones = +600 cents (higher pitch)
+  return ((pitch - 50) / 50) * 6 * 100;
+}
+
 function SoundscapePage() {
   const location = useLocation();
   const survey = location.state;
@@ -82,21 +92,27 @@ function SoundscapePage() {
       const moodVolume = survey?.mood_volume ?? 0;
       const placeVolume = survey?.place_volume ?? 0;
       const weatherVolume = survey?.weather_volume ?? 0;
-      const moodPlayer = new Tone.Player({ url: moodSound, loop: true }).toDestination().sync().start(0);
+      // Get pitch from survey (default to 50 for balanced)
+      const pitch = survey?.pitch ?? 50;
+      const detune = pitchToDetune(pitch);
+      await Tone.start();
+      await Tone.loaded();
+      const moodPlayer = new Tone.GrainPlayer({ url: moodSound, loop: true, detune: detune }).toDestination();
       moodPlayer.playbackRate = playbackRate;
       moodPlayer.volume.value = moodVolume;
-      const locationPlayer = new Tone.Player({ url: locationSound, loop: true }).toDestination().sync().start(0);
+      const locationPlayer = new Tone.GrainPlayer({ url: locationSound, loop: true, detune: detune }).toDestination();
       locationPlayer.playbackRate = playbackRate;
       locationPlayer.volume.value = placeVolume;
-      const weatherPlayer = new Tone.Player({ url: weatherSound, loop: true }).toDestination().sync().start(0);
+      const weatherPlayer = new Tone.GrainPlayer({ url: weatherSound, loop: true, detune: detune }).toDestination();
       weatherPlayer.playbackRate = playbackRate;
       weatherPlayer.volume.value = weatherVolume;
       setPlayers([moodPlayer, locationPlayer, weatherPlayer]);
       setNeverPlayed(false);
       setIsPlaying(true);
-      await Tone.start();
-      await Tone.loaded();
       Tone.Transport.start();
+      moodPlayer.sync().start(0);
+      locationPlayer.sync().start(0);
+      weatherPlayer.sync().start(0);
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -189,6 +205,12 @@ function SoundscapePage() {
                   <div className="form-label">Tempo</div>
                   <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
                     {survey.tempo} BPM
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-label">Pitch (Necessary vs Nonessential)</div>
+                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
+                    Necessary: {100 - (survey.pitch ?? 50)}% | Nonessential: {survey.pitch ?? 50}%
                   </div>
                 </div>
               </div>

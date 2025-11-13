@@ -40,9 +40,13 @@ const questions = [
   },
   {
     question: "How fast did your day go by?",
-    options: ["Slow", "Normal", "Fast"],
     key: "tempo",
     isTempo: true,
+  },
+  {
+    question: "How much of your day was spent on necessary tasks and how much of your day was spent on nonessential activities?",
+    key: "pitch",
+    isPitch: true,
   },
   {
     question: "Adjust the volume of each element based on how aware you were of each.",
@@ -90,6 +94,7 @@ function Survey() {
     mood_volume: 0,
     mood_custom_url: "",
     tempo: 120,
+    pitch: 50, // 0-100, where 0 = all nonessential, 100 = all necessary
   }); // Stores the users answer to each question
   const navigate = useNavigate(); // used to navigate to another page once the survey is complete
   
@@ -100,8 +105,10 @@ function Survey() {
 
   // Track if the user has interacted with the tempo slider
   const [tempoTouched, setTempoTouched] = useState(false);
+  // Track if the user has interacted with the pitch slider
+  const [pitchTouched, setPitchTouched] = useState(false);
 
-  // Refs to store currently playing Tone.Player objects for each category
+  // Refs to store currently playing Tone.GrainPlayer objects for each category
   const weatherPlayerRef = useRef(null);
   const placePlayerRef = useRef(null);
   const moodPlayerRef = useRef(null);
@@ -155,55 +162,66 @@ function Survey() {
   // Note: We no longer revoke URLs on submit because SoundscapePage needs them.
   // We'll only revoke URLs if the user changes their selection within the survey.
 
+  // Convert pitch value (0-100) to detune in cents (-600 to +600)
+  // Detune uses cents, where 100 cents = 1 semitone
+  function pitchToDetune(pitch) {
+    // Map 0-100 to -6 to +6 semitones, then convert to cents
+    // 0 (all necessary) = -6 semitones = -600 cents (lower pitch)
+    // 50 (balanced) = 0 semitones = 0 cents (no change)
+    // 100 (all nonessential) = +6 semitones = +600 cents (higher pitch)
+    return ((pitch - 50) / 50) * 6 * 100;
+  }
+
   // Play a sample sound for a given category and option
   async function playSample(category, option) {
     // Map category/option to sound URL
     let soundUrl = null;
-    if (category === "weather") {
-      const idx = getIndexFromAnswer(weather_sounds, option);
-      if (idx !== -1) soundUrl = Object.values(weather_sounds[idx])[0];
-      stopAndDisposePlayer(weatherPlayerRef);
-      const weatherPlayer = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
-      weatherPlayerRef.current = weatherPlayer;
-      weatherPlayer.autostart = true;
-
-    } else if (category === "place") {
-      const idx = getIndexFromAnswer(location_sounds, option);
-      if (idx !== -1) soundUrl = Object.values(location_sounds[idx])[0];
-      stopAndDisposePlayer(placePlayerRef);
-      const placePlayer = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
-      placePlayerRef.current = placePlayer;
-      placePlayer.autostart = true;
-
-    } else if (category === "mood") {
-      const idx = getIndexFromAnswer(mood_sounds, option);
-      if (idx !== -1) soundUrl = Object.values(mood_sounds[idx])[0];
-      stopAndDisposePlayer(moodPlayerRef);
-      const moodPlayer = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
-      moodPlayerRef.current = moodPlayer;
-      moodPlayer.autostart = true;
-    }
-    if (!soundUrl) return;
-
+    const detune = pitchToDetune(answers.pitch);
+    const playbackRate = answers.tempo / 120;
+    
     // Start Tone.js AudioContext after user interaction
     try {
       await Tone.start();
     } catch (error) {
       console.log("AudioContext already started or user interaction required");
     }
+    
+    // Wait for any existing buffers to load first
+    await Tone.loaded();
+    
+    if (category === "weather") {
+      const idx = getIndexFromAnswer(weather_sounds, option);
+      if (idx !== -1) soundUrl = Object.values(weather_sounds[idx])[0];
+      if (!soundUrl) return;
+      stopAndDisposePlayer(weatherPlayerRef);
+      const weatherPlayer = new Tone.GrainPlayer({ url: soundUrl, loop: true, detune: detune }).toDestination();
+      weatherPlayer.playbackRate = playbackRate;
+      weatherPlayerRef.current = weatherPlayer;
+      Tone.Transport.start();
+      weatherPlayer.sync().start(0);
 
-    /*
-    stopAndDisposePlayer();
-    try {
-      //await Tone.start();
-      //await Tone.loaded();
-      const player = new Tone.Player({ url: soundUrl, loop: true }).toDestination();
-      playerRef.current = player;
-      player.autostart = true;
-    } catch (e) {
-      console.error("Error playing sample sound:", e);
+    } else if (category === "place") {
+      const idx = getIndexFromAnswer(location_sounds, option);
+      if (idx !== -1) soundUrl = Object.values(location_sounds[idx])[0];
+      if (!soundUrl) return;
+      stopAndDisposePlayer(placePlayerRef);
+      const placePlayer = new Tone.GrainPlayer({ url: soundUrl, loop: true, detune: detune }).toDestination();
+      placePlayer.playbackRate = playbackRate;
+      placePlayerRef.current = placePlayer;
+      Tone.Transport.start();
+      placePlayer.sync().start(0);
+
+    } else if (category === "mood") {
+      const idx = getIndexFromAnswer(mood_sounds, option);
+      if (idx !== -1) soundUrl = Object.values(mood_sounds[idx])[0];
+      if (!soundUrl) return;
+      stopAndDisposePlayer(moodPlayerRef);
+      const moodPlayer = new Tone.GrainPlayer({ url: soundUrl, loop: true, detune: detune }).toDestination();
+      moodPlayer.playbackRate = playbackRate;
+      moodPlayerRef.current = moodPlayer;
+      Tone.Transport.start();
+      moodPlayer.sync().start(0);
     }
-      */
   }
 
   // Handle local file upload for a category and autoplay it
@@ -230,9 +248,14 @@ function Survey() {
       } catch (error) {
         console.log("AudioContext already started or user interaction required");
       }
-      const player = new Tone.Player({ url, loop: true }).toDestination();
-      player.autostart = true;
+      const detune = pitchToDetune(answers.pitch);
+      const playbackRate = answers.tempo / 120;
+      await Tone.loaded();
+      const player = new Tone.GrainPlayer({ url, loop: true, detune: detune }).toDestination();
+      player.playbackRate = playbackRate;
       playerRef.current = player;
+      Tone.Transport.start();
+      player.sync().start(0);
     }
   }
 
@@ -241,9 +264,7 @@ function Survey() {
     const key = questions[step].key;
     setAnswers(prev => ({
       ...prev,
-      [key]: questions[step].isTempo
-        ? option === "Slow" ? 80 : option === "Normal" ? 120 : 160
-        : option,
+      [key]: option,
     }));
     // Play sample sound if this is a sound-linked question
     if (["weather", "place", "mood"].includes(key)) {
@@ -253,12 +274,32 @@ function Survey() {
 
   // For tempo slider
   function handleTempoChange(value) {
-    setAnswers(prev => ({ ...prev, tempo: Number(value) }));
+    const newTempo = Number(value);
+    setAnswers(prev => ({ ...prev, tempo: newTempo }));
     setTempoTouched(true);
-    let playbackRate = answers.tempo / 120;
-    weatherPlayerRef.current.playbackRate = playbackRate;
-    moodPlayerRef.current.playbackRate = playbackRate;
-    placePlayerRef.current.playBackRate = playbackRate;
+    // Update playback rate for all players
+    const playbackRate = newTempo / 120;
+    if (weatherPlayerRef.current) weatherPlayerRef.current.playbackRate = playbackRate;
+    if (moodPlayerRef.current) moodPlayerRef.current.playbackRate = playbackRate;
+    if (placePlayerRef.current) placePlayerRef.current.playbackRate = playbackRate;
+  }
+
+  // For pitch slider
+  function handlePitchChange(value) {
+    const newPitch = Number(value);
+    setAnswers(prev => ({ ...prev, pitch: newPitch }));
+    setPitchTouched(true);
+    // Update detune for all players
+    const detune = pitchToDetune(newPitch);
+    if (weatherPlayerRef.current) {
+      weatherPlayerRef.current.detune.value = detune;
+    }
+    if (moodPlayerRef.current) {
+      moodPlayerRef.current.detune.value = detune;
+    }
+    if (placePlayerRef.current) {
+      placePlayerRef.current.detune.value = detune;
+    }
   }
 
   // Handler for volume slider changes
@@ -284,6 +325,7 @@ function Survey() {
     if (step < questions.length - 1) {
       setStep(step + 1);
       setTempoTouched(false); // reset for next time tempo appears
+      setPitchTouched(false); // reset for next time pitch appears
     } else {
       // Final step - save responses and navigate
       setIsSaving(true);
@@ -293,6 +335,8 @@ function Survey() {
         stopAndDisposePlayer(weatherPlayerRef);
         stopAndDisposePlayer(placePlayerRef);
         stopAndDisposePlayer(moodPlayerRef);
+        // Stop Transport
+        Tone.Transport.stop();
         
         // Save responses to backend if we have a session
         if (sessionId) {
@@ -319,7 +363,8 @@ function Survey() {
   // Determine if Continue should be enabled
   const currentKey = questions[step].key;
   const isTempo = questions[step].isTempo;
-  const isAnswered = isTempo ? tempoTouched : answers[currentKey] !== "";
+  const isPitch = questions[step].isPitch;
+  const isAnswered = isTempo ? tempoTouched : isPitch ? pitchTouched : answers[currentKey] !== "";
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
@@ -396,6 +441,21 @@ function Survey() {
               style={{ width: "60%", margin: "2rem 0" }}
             />
             <div style={{ marginBottom: "1rem" }}>Tempo: {answers.tempo} BPM</div>
+          </div>
+        ) : isPitch ? (
+          <div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={answers.pitch}
+              onChange={e => handlePitchChange(e.target.value)}
+              style={{ width: "60%", margin: "2rem 0" }}
+            />
+            <div style={{ marginBottom: "1rem" }}>
+              Necessary tasks: {100 - answers.pitch}% | Nonessential activities: {answers.pitch}%
+            </div>
           </div>
         ) : (
           <div>
