@@ -437,16 +437,6 @@ function Survey() {
     }
   }
 
-  async function handleSocialUpload(file) {
-    if (!file) return;
-    try {
-      await handleSocialBlob(file, "uploaded", file.name);
-    } catch (error) {
-      console.error("Failed to handle upload:", error);
-      setRecordingError("Failed to load the selected file.");
-    }
-  }
-
   function resetSocialAudio() {
     if (isRecording) {
       stopRecording();
@@ -492,6 +482,16 @@ function Survey() {
         
         // Save responses to backend if we have a session
         if (sessionId) {
+          // Log social_audio_data before saving
+          if (answers.social_audio_data) {
+            console.log('Saving survey with social_audio_data:', {
+              hasData: !!answers.social_audio_data,
+              size: answers.social_audio_data.length,
+              sizeMB: (answers.social_audio_data.length / 1024 / 1024).toFixed(2)
+            });
+          } else {
+            console.warn('Warning: No social_audio_data in answers when saving');
+          }
           await studyService.saveSurveyResponses(sessionId, answers);
           console.log('Survey responses saved successfully');
         }
@@ -666,14 +666,6 @@ function Survey() {
               >
                 {isRecording ? "Stop Recording" : "Record Sound"}
               </button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>Or upload an audio file</div>
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={e => handleSocialUpload(e.target.files?.[0])}
-              />
             </div>
             {recordingError && (
               <div style={{ color: "#dc3545", marginBottom: "1rem" }}>{recordingError}</div>
