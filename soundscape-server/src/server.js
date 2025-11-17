@@ -110,8 +110,11 @@ app.post('/signup', (req, res) => {
     return res.status(400).json({ error: "Username and password cannot be empty" });
   }
   
+  // Trim password to ensure consistency (leading/trailing spaces can cause login issues)
+  const trimmedPassword = password.trim();
+  
   // Hash password
-  const hashed = bcrypt.hashSync(password, 10);
+  const hashed = bcrypt.hashSync(trimmedPassword, 10);
   const stmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
 
   stmt.run(username.trim(), hashed, function (err) {
@@ -164,8 +167,11 @@ app.post('/login', (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Trim password to ensure consistency with signup
+    const trimmedPassword = password.trim();
+    
     // Compare password
-    const valid = bcrypt.compareSync(password, user.password);
+    const valid = bcrypt.compareSync(trimmedPassword, user.password);
     if (!valid) {
       console.log(`Login attempt failed: invalid password for user - ${username}`);
       return res.status(401).json({ error: "Invalid credentials" });
