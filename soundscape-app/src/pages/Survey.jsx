@@ -500,12 +500,24 @@ function Survey() {
         const nextDay = studyService.incrementStudyDay();
         console.log(`Study day incremented to: ${nextDay}`);
         
-        // Go to soundscape page with answers
-        navigate("/soundscape", { state: { ...answers } });
+        // Go to soundscape page with answers, study day, and date
+        navigate("/soundscape", { 
+          state: { 
+            ...answers, 
+            studyDay,
+            recordedDate: new Date().toISOString()
+          } 
+        });
       } catch (error) {
         console.error('Failed to save survey responses:', error);
         // Still navigate to soundscape page even if save fails
-        navigate("/soundscape", { state: { ...answers } });
+        navigate("/soundscape", { 
+          state: { 
+            ...answers, 
+            studyDay,
+            recordedDate: new Date().toISOString()
+          } 
+        });
       } finally {
         setIsSaving(false);
       }

@@ -55,7 +55,13 @@ function SoundscapeHistory() {
   }
 
   function handleReplay(entry) {
-    navigate("/soundscape", { state: { ...entry.responses } });
+    navigate("/soundscape", { 
+      state: { 
+        ...entry.responses,
+        studyDay: entry.studyDay,
+        recordedDate: entry.createdAt
+      } 
+    });
   }
 
   function canReplay(entry) {
@@ -90,7 +96,7 @@ function SoundscapeHistory() {
   return (
     <div className="container" style={{ padding: "2rem 0" }}>
       <div className="text-center" style={{ marginBottom: "2rem" }}>
-        <h1>Your Soundscape Library</h1>
+        <h1>Your Sonification Library</h1>
         <p style={{ color: "var(--text-secondary)" }}>
           Revisit and replay soundscapes created from your past surveys.
         </p>
@@ -115,32 +121,22 @@ function SoundscapeHistory() {
                   {formatDate(entry.createdAt)}
                 </div>
               </div>
-              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <InfoRow label="Mood" value={responses.mood || "—"} />
-                <InfoRow label="Location" value={responses.place || "—"} />
-                <InfoRow label="Weather" value={responses.weather || "—"} />
-                <InfoRow label="Social" value={responses.social || "—"} />
+              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {responses.social_audio_data && (
-                  <audio
-                    controls
-                    src={responses.social_audio_data}
-                    style={{ width: "100%", margin: "0.5rem 0" }}
-                  />
+                  <div>
+                    <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Recorded Social Audio</div>
+                    <audio
+                      controls
+                      src={responses.social_audio_data}
+                      style={{ width: "100%" }}
+                    />
+                  </div>
                 )}
-                <InfoRow label="Tempo" value={responses.tempo ? `${responses.tempo} BPM` : "—"} />
-                <InfoRow
-                  label="Pitch"
-                  value={
-                    typeof responses.pitch === "number"
-                      ? `${100 - responses.pitch}% necessary / ${responses.pitch}% nonessential`
-                      : "—"
-                  }
-                />
                 <button
                   className="btn btn-primary"
                   onClick={() => playable && handleReplay(entry)}
                   disabled={!playable}
-                  style={{ marginTop: "0.5rem", opacity: playable ? 1 : 0.6 }}
+                  style={{ opacity: playable ? 1 : 0.6 }}
                 >
                   {playable ? "Replay" : "Missing survey data"}
                 </button>
@@ -153,14 +149,4 @@ function SoundscapeHistory() {
   );
 }
 
-function InfoRow({ label, value }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
-      <span style={{ color: "var(--text-secondary)" }}>{label}</span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
-    </div>
-  );
-}
-
 export default SoundscapeHistory;
-

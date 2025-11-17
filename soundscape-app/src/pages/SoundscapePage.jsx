@@ -30,6 +30,19 @@ function getIndexFromAnswer(list, answer) {
   return list.findIndex(obj => Object.keys(obj)[0].toLowerCase() === answer?.toLowerCase());
 }
 
+function formatDate(dateString) {
+  if (!dateString) return "Unknown date";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date";
+  }
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 // Convert pitch value (0-100) to detune in cents (-600 to +600)
 // Detune uses cents, where 100 cents = 1 semitone
 function pitchToDetune(pitch) {
@@ -216,59 +229,27 @@ function SoundscapePage() {
   return (
     <div className="container" style={{ paddingTop: "var(--spacing-xl)", paddingBottom: "var(--spacing-xl)" }}>
       <div className="text-center animate-fade-in">
-        <h1 style={{ marginBottom: "var(--spacing-xl)" }}>Your Daily Soundscape</h1>
+        <h1 style={{ marginBottom: "var(--spacing-xl)" }}>Your Daily Sonification</h1>
         
         {survey ? (
           <div className="card" style={{ maxWidth: "600px", margin: "0 auto" }}>
             <div className="card-header">
-              <h2>Survey Results</h2>
+              <h2>
+                {survey.studyDay ? `Study Day ${survey.studyDay}` : "Sonification"}
+                {survey.recordedDate && ` - ${formatDate(survey.recordedDate)}`}
+              </h2>
             </div>
-            <div className="card-body">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--spacing-md)", marginBottom: "var(--spacing-lg)" }}>
-                <div className="form-group">
-                  <div className="form-label">Weather</div>
-                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    {survey.weather}
-                  </div>
+            <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-lg)", alignItems: "center" }}>
+              {survey.social_audio_data && (
+                <div style={{ width: "100%" }}>
+                  <div className="form-label" style={{ marginBottom: "0.5rem" }}>Recorded Social Audio</div>
+                  <audio
+                    controls
+                    src={survey.social_audio_data}
+                    style={{ width: "100%" }}
+                  />
                 </div>
-                <div className="form-group">
-                  <div className="form-label">Place</div>
-                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    {survey.place}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <div className="form-label">Social</div>
-                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    {survey.social || "—"}
-                  </div>
-                  {survey.social_audio_data && (
-                    <audio
-                      controls
-                      src={survey.social_audio_data}
-                      style={{ width: "100%", marginTop: "0.5rem" }}
-                    />
-                  )}
-                </div>
-                <div className="form-group">
-                  <div className="form-label">Mood</div>
-                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    {survey.mood}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <div className="form-label">Tempo</div>
-                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    {survey.tempo} BPM
-                  </div>
-                </div>
-                <div className="form-group">
-                  <div className="form-label">Pitch (Necessary vs Nonessential)</div>
-                  <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    Necessary: {100 - (survey.pitch ?? 50)}% | Nonessential: {survey.pitch ?? 50}%
-                  </div>
-                </div>
-              </div>
+              )}
               <PlayButton />
             </div>
           </div>
