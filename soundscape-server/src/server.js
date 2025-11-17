@@ -31,6 +31,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Explicitly handle OPTIONS requests for all routes (preflight requests)
+app.options('*', cors(corsOptions));
+
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -406,7 +409,11 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 // Return 404 for all non-API routes (frontend is served separately)
+// Skip OPTIONS requests as they're handled by CORS middleware
 app.use((req, res) => {
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API route not found' });
   }
