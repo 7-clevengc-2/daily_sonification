@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Tone from "tone";
 import studyService from "../services/studyService";
@@ -7,7 +7,19 @@ import { useAuth } from "../AuthContext";
 //Objects for each survey question
 // Questions is the test displayed to the user, options is an array of possible answers,
 // and key sets where the answer is stored in the state dictionary
-const questions = [
+const QUESTION_AVAILABILITY = {
+  weather: 1,
+  place: 1,
+  day_rating: 2,
+  mood: 2,
+  tempo: 3,
+  pitch: 4,
+  volume_control: 5,
+  social_people: 6,
+  social: 6,
+};
+
+const ALL_QUESTIONS = [
   {
     question: "What was the weather like?",
     options: ["Sunny", "Foggy/Cloudy", "Windy", "Raining", "Snowing/Hailing"],
@@ -268,8 +280,9 @@ function Survey() {
   }
 
   // Updates the answers state when a user selects an option
-  function handleSelect(option) {
-    const key = questions[step].key;
+  function handleSelect(option, currentQuestion) {
+    if (!currentQuestion) return;
+    const key = currentQuestion.key;
     setAnswers(prev => ({
       ...prev,
       [key]: option,
@@ -328,9 +341,9 @@ function Survey() {
   }
 
   // Continue to next question or submit
-  async function handleContinue() {
-    const key = questions[step].key;
-    if (step < questions.length - 1) {
+  async function handleContinue(currentQuestion, totalSteps) {
+    if (!currentQuestion) return;
+    if (step < totalSteps - 1) {
       setStep(step + 1);
       setTempoTouched(false); // reset for next time tempo appears
       setPitchTouched(false); // reset for next time pitch appears
@@ -369,10 +382,29 @@ function Survey() {
   }
 
   // Determine if Continue should be enabled
-  const currentKey = questions[step].key;
-  const isTempo = questions[step].isTempo;
-  const isPitch = questions[step].isPitch;
+  const availableQuestions = useMemo(
+    () =>
+      ALL_QUESTIONS.filter(
+        (question) => (QUESTION_AVAILABILITY[question.key] ?? 1) <= studyDay
+      ),
+    [studyDay]
+  );
+  const totalSteps = availableQuestions.length;
+  const currentQuestion = availableQuestions[step] || availableQuestions[availableQuestions.length - 1];
+  if (!currentQuestion) {
+    return null;
+  }
+
+  const currentKey = currentQuestion.key;
+  const isTempo = currentQuestion.isTempo;
+  const isPitch = currentQuestion.isPitch;
   const isAnswered = isTempo ? tempoTouched : isPitch ? pitchTouched : answers[currentKey] !== "";
+
+  useEffect(() => {
+    if (step > totalSteps - 1) {
+      setStep(totalSteps > 0 ? totalSteps - 1 : 0);
+    }
+  }, [step, totalSteps]);
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
@@ -390,9 +422,9 @@ function Survey() {
         </div>
       )}
       <div style={{ margin: "2rem 0" }}>
-        <h3>{questions[step].question}</h3>
+        <h3>{currentQuestion.question}</h3>
         {/* Render volume sliders for the final question */}
-        {questions[step].isVolumeControl ? (
+        {currentQuestion.isVolumeControl ? (
           <div>
             <div style={{ margin: "1.5rem 0" }}>
               <label>
@@ -467,10 +499,10 @@ function Survey() {
           </div>
         ) : (
           <div>
-            {questions[step].options.map(option => (
+            {currentQuestion.options.map(option => (
               <button
                 key={option}
-                onClick={() => handleSelect(option)}
+                onClick={() => handleSelect(option, currentQuestion)}
                 style={{
                   display: "block",
                   margin: "1rem auto",
@@ -506,7 +538,7 @@ function Survey() {
           </div>
         )}
         <button
-          onClick={handleContinue}
+          onClick={() => handleContinue(currentQuestion, totalSteps)}
           disabled={!isAnswered || isSaving}
           style={{
             marginTop: "2rem",
@@ -519,10 +551,10 @@ function Survey() {
             cursor: (isAnswered && !isSaving) ? "pointer" : "not-allowed"
           }}
         >
-          {isSaving ? "Saving..." : (step < questions.length - 1 ? "Continue" : "Finish")}
+          {isSaving ? "Saving..." : (step < totalSteps - 1 ? "Continue" : "Finish")}
         </button>
       </div>
-      <div>Step {step + 1} of {questions.length}</div> {/* Current step out of total steps */}
+      <div>Step {Math.min(step + 1, totalSteps)} of {totalSteps}</div> {/* Current step out of total steps */}
     </div>
   );
 }

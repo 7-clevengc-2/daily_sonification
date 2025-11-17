@@ -103,9 +103,27 @@ function SoundscapePage() {
       setBlobUrls([]);
       Tone.Transport.stop();
       Tone.Transport.cancel(0);
-      const moodSound = survey?.mood_custom_url || Object.values(mood_sounds[moodIdx])[0];
-      const locationSound = survey?.place_custom_url || Object.values(location_sounds[locIdx])[0];
-      const weatherSound = survey?.weather_custom_url || Object.values(weather_sounds[weatherIdx])[0];
+      const safeMoodIdx = moodIdx >= 0 && moodIdx < mood_sounds.length ? moodIdx : 0;
+      const safeLocIdx = locIdx >= 0 && locIdx < location_sounds.length ? locIdx : 0;
+      const safeWeatherIdx = weatherIdx >= 0 && weatherIdx < weather_sounds.length ? weatherIdx : 0;
+
+      const hasSurveyMood = Boolean(survey?.mood_custom_url || survey?.mood);
+      const hasSurveyPlace = Boolean(survey?.place_custom_url || survey?.place);
+      const hasSurveyWeather = Boolean(survey?.weather_custom_url || survey?.weather);
+
+      const moodSound = survey
+        ? (hasSurveyMood ? (survey.mood_custom_url || Object.values(mood_sounds[safeMoodIdx])[0]) : null)
+        : Object.values(mood_sounds[safeMoodIdx])[0];
+      const locationSound = survey
+        ? (hasSurveyPlace ? (survey.place_custom_url || Object.values(location_sounds[safeLocIdx])[0]) : null)
+        : Object.values(location_sounds[safeLocIdx])[0];
+      const weatherSound = survey
+        ? (hasSurveyWeather ? (survey.weather_custom_url || Object.values(weather_sounds[safeWeatherIdx])[0]) : null)
+        : Object.values(weather_sounds[safeWeatherIdx])[0];
+
+      if (!locationSound && !weatherSound && !moodSound) {
+        throw new Error("No sound sources available to play.");
+      }
       const playbackRate = bpm / ORIGINAL_BPM;
       // Get volume values from survey (default to 0 if not set)
       const moodVolume = survey?.mood_volume ?? 0;
@@ -116,22 +134,33 @@ function SoundscapePage() {
       const detune = pitchToDetune(pitch);
       await Tone.start();
       await Tone.loaded();
-      const moodPlayer = new Tone.GrainPlayer({ url: moodSound, loop: true, detune: detune }).toDestination();
-      moodPlayer.playbackRate = playbackRate;
-      moodPlayer.volume.value = moodVolume;
-      const locationPlayer = new Tone.GrainPlayer({ url: locationSound, loop: true, detune: detune }).toDestination();
-      locationPlayer.playbackRate = playbackRate;
-      locationPlayer.volume.value = placeVolume;
-      const weatherPlayer = new Tone.GrainPlayer({ url: weatherSound, loop: true, detune: detune }).toDestination();
-      weatherPlayer.playbackRate = playbackRate;
-      weatherPlayer.volume.value = weatherVolume;
-      setPlayers([moodPlayer, locationPlayer, weatherPlayer]);
+      const createdPlayers = [];
+      if (moodSound) {
+        const moodPlayer = new Tone.GrainPlayer({ url: moodSound, loop: true, detune: detune }).toDestination();
+        moodPlayer.playbackRate = playbackRate;
+        moodPlayer.volume.value = moodVolume;
+        moodPlayer.sync().start(0);
+        createdPlayers.push(moodPlayer);
+      }
+      if (locationSound) {
+        const locationPlayer = new Tone.GrainPlayer({ url: locationSound, loop: true, detune: detune }).toDestination();
+        locationPlayer.playbackRate = playbackRate;
+        locationPlayer.volume.value = placeVolume;
+        locationPlayer.sync().start(0);
+        createdPlayers.push(locationPlayer);
+      }
+      if (weatherSound) {
+        const weatherPlayer = new Tone.GrainPlayer({ url: weatherSound, loop: true, detune: detune }).toDestination();
+        weatherPlayer.playbackRate = playbackRate;
+        weatherPlayer.volume.value = weatherVolume;
+        weatherPlayer.sync().start(0);
+        createdPlayers.push(weatherPlayer);
+      }
+
+      setPlayers(createdPlayers);
       setNeverPlayed(false);
       setIsPlaying(true);
       Tone.Transport.start();
-      moodPlayer.sync().start(0);
-      locationPlayer.sync().start(0);
-      weatherPlayer.sync().start(0);
     } catch (error) {
       console.error("Error playing sound:", error);
     }

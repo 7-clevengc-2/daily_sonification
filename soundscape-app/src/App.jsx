@@ -7,6 +7,7 @@ import SoundscapeHistory from './pages/SoundscapeHistory';
 import UploadSound from './pages/UploadSound';
 import Survey from './pages/Survey';
 import Admin from './pages/Admin';
+import StudyDayManager from './pages/StudyDayManager';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -24,6 +25,7 @@ function App() {
                 <li><Link to="/soundscapes/history" className="nav-link">History</Link></li>
                 <li><Link to="/survey" className="nav-link">Survey</Link></li>
                 <li><Link to="/upload" className="nav-link">Upload</Link></li>
+                <li><Link to="/study-day" className="nav-link">Study Day</Link></li>
                 <li><Link to="/admin" className="nav-link">Admin</Link></li>
                 <li style={{ marginLeft: "auto" }}>
                   <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
@@ -64,6 +66,11 @@ function App() {
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <Admin />
+                </ProtectedRoute>
+              } />
+              <Route path="/study-day" element={
+                <ProtectedRoute>
+                  <StudyDayManager />
                 </ProtectedRoute>
               } />
             </Routes>

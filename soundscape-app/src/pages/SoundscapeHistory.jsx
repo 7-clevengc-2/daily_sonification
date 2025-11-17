@@ -47,14 +47,19 @@ function SoundscapeHistory() {
     };
   }, []);
 
-  const requiredKeys = ["mood", "place", "weather"];
+  const requiredKeys = ["place", "weather"];
+
+  function hasResponseValue(entry, key) {
+    const responses = entry.responses || {};
+    return Boolean(responses[key]) || Boolean(responses[`${key}_custom_url`]);
+  }
 
   function handleReplay(entry) {
     navigate("/soundscape", { state: { ...entry.responses } });
   }
 
   function canReplay(entry) {
-    return requiredKeys.every((key) => !!entry.responses[key]);
+    return requiredKeys.every((key) => hasResponseValue(entry, key));
   }
 
   if (loading) {
