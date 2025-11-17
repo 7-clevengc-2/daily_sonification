@@ -240,8 +240,15 @@ function SoundscapePage() {
                 <div className="form-group">
                   <div className="form-label">Social</div>
                   <div style={{ padding: "var(--spacing-sm)", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)" }}>
-                    {survey.social}
+                    {survey.social || "—"}
                   </div>
+                  {survey.social_audio_data && (
+                    <audio
+                      controls
+                      src={survey.social_audio_data}
+                      style={{ width: "100%", marginTop: "0.5rem" }}
+                    />
+                  )}
                 </div>
                 <div className="form-group">
                   <div className="form-label">Mood</div>

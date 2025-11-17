@@ -36,9 +36,9 @@ const ALL_QUESTIONS = [
     key: "social_people",
   },
   {
-    question: "What did your social interactions sound like? [CURRENTLY NO SOUNDS]",
-    options: ["Hum", "Bark", "Laughter", "Murmur", "Yelling", "Singing"],
+    question: "Capture the sound of your social interactions.",
     key: "social",
+    isSocialAudio: true,
   },
   {
     question: "Rate how your day went on a scale of 1-5 (with 1 being the worst and 5 being the best).",
@@ -97,6 +97,15 @@ function getIndexFromAnswer(list, answer) {
   );
 }
 
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function Survey() {
   const { isAuthenticated, user } = useAuth();
   const [step, setStep] = useState(0); // tracks the question the user is on starting at 0
@@ -109,6 +118,9 @@ function Survey() {
     place_custom_url: "",
     social_people : "",
     social: "",
+    social_audio_data: "",
+    social_audio_filename: "",
+    social_audio_source: "",
     day_rating: "",
     mood: "",
     mood_volume: 0,
@@ -133,6 +145,11 @@ function Survey() {
   const placePlayerRef = useRef(null);
   const moodPlayerRef = useRef(null);
   const objectUrlsRef = useRef([]); // track created object URLs to revoke (only if discarded)
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingError, setRecordingError] = useState("");
+  const [socialPreviewUrl, setSocialPreviewUrl] = useState("");
 
   // Initialize study session on component mount
   useEffect(() => {
@@ -340,6 +357,120 @@ function Survey() {
     }
   }
 
+  function updateSocialPreviewUrl(newUrl) {
+    setSocialPreviewUrl(prev => {
+      if (prev) {
+        try {
+          URL.revokeObjectURL(prev);
+        } catch (e) {
+          // ignore
+        }
+      }
+      return newUrl;
+    });
+  }
+
+  async function handleSocialBlob(blob, source, filename = "") {
+    if (!blob) return;
+    const previewUrl = URL.createObjectURL(blob);
+    updateSocialPreviewUrl(previewUrl);
+    try {
+      const dataUrl = await blobToDataUrl(blob);
+      setAnswers(prev => ({
+        ...prev,
+        social: source === "recorded" ? "Recorded Sound" : filename ? `Uploaded: ${filename}` : "Uploaded Sound",
+        social_audio_data: dataUrl,
+        social_audio_filename: filename,
+        social_audio_source: source,
+      }));
+      setRecordingError("");
+    } catch (err) {
+      console.error("Failed to process audio blob:", err);
+      setRecordingError("Failed to process audio. Please try again.");
+      updateSocialPreviewUrl("");
+    }
+  }
+
+  async function startRecording() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setRecordingError("Recording is not supported in this browser.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+      mediaRecorder.onstop = async () => {
+        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        recordedChunksRef.current = [];
+        await handleSocialBlob(blob, "recorded", `social-recording-${Date.now()}.webm`);
+      };
+      mediaRecorder.start();
+      mediaRecorderRef.current = { recorder: mediaRecorder, stream };
+      setIsRecording(true);
+      setRecordingError("");
+    } catch (error) {
+      console.error("Failed to start recording:", error);
+      setRecordingError("Unable to access microphone. Please check permissions.");
+    }
+  }
+
+  function stopRecording() {
+    const current = mediaRecorderRef.current;
+    if (!current) return;
+    try {
+      if (current.recorder.state !== "inactive") {
+        current.recorder.stop();
+      }
+      current.stream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error("Error stopping recorder:", error);
+    } finally {
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
+    }
+  }
+
+  async function handleSocialUpload(file) {
+    if (!file) return;
+    try {
+      await handleSocialBlob(file, "uploaded", file.name);
+    } catch (error) {
+      console.error("Failed to handle upload:", error);
+      setRecordingError("Failed to load the selected file.");
+    }
+  }
+
+  function resetSocialAudio() {
+    if (isRecording) {
+      stopRecording();
+    }
+    updateSocialPreviewUrl("");
+    setAnswers(prev => ({
+      ...prev,
+      social: "",
+      social_audio_data: "",
+      social_audio_filename: "",
+      social_audio_source: "",
+    }));
+  }
+
+  useEffect(() => {
+    return () => {
+      if (isRecording) {
+        stopRecording();
+      }
+      updateSocialPreviewUrl("");
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Continue to next question or submit
   async function handleContinue(currentQuestion, totalSteps) {
     if (!currentQuestion) return;
@@ -398,7 +529,14 @@ function Survey() {
   const currentKey = currentQuestion.key;
   const isTempo = currentQuestion.isTempo;
   const isPitch = currentQuestion.isPitch;
-  const isAnswered = isTempo ? tempoTouched : isPitch ? pitchTouched : answers[currentKey] !== "";
+  const isSocialAudio = currentQuestion.isSocialAudio;
+  const isAnswered = isTempo
+    ? tempoTouched
+    : isPitch
+      ? pitchTouched
+      : isSocialAudio
+        ? Boolean(answers.social_audio_data)
+        : answers[currentKey] !== "";
 
   useEffect(() => {
     if (step > totalSteps - 1) {
@@ -496,6 +634,57 @@ function Survey() {
             <div style={{ marginBottom: "1rem" }}>
               Necessary tasks: {100 - answers.pitch}% | Nonessential activities: {answers.pitch}%
             </div>
+          </div>
+        ) : isSocialAudio ? (
+          <div>
+            <div style={{ marginBottom: "1rem" }}>
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                style={{
+                  padding: "0.75rem 2rem",
+                  fontSize: "1rem",
+                  borderRadius: "6px",
+                  border: "1px solid #007bff",
+                  background: isRecording ? "#dc3545" : "#007bff",
+                  color: "#fff",
+                  cursor: "pointer",
+                  width: "100%",
+                  maxWidth: "320px"
+                }}
+              >
+                {isRecording ? "Stop Recording" : "Record Sound"}
+              </button>
+            </div>
+            <div style={{ marginBottom: "1rem" }}>
+              <div style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>Or upload an audio file</div>
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={e => handleSocialUpload(e.target.files?.[0])}
+              />
+            </div>
+            {recordingError && (
+              <div style={{ color: "#dc3545", marginBottom: "1rem" }}>{recordingError}</div>
+            )}
+            {socialPreviewUrl && (
+              <div style={{ marginTop: "1rem" }}>
+                <audio controls src={socialPreviewUrl} style={{ width: "100%", maxWidth: "400px" }} />
+                <div style={{ marginTop: "0.5rem" }}>
+                  <button
+                    onClick={resetSocialAudio}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      borderRadius: "4px",
+                      border: "1px solid #6c757d",
+                      background: "#f8f9fa",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Remove Sound
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div>

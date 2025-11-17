@@ -119,6 +119,14 @@ function SoundscapeHistory() {
                 <InfoRow label="Mood" value={responses.mood || "—"} />
                 <InfoRow label="Location" value={responses.place || "—"} />
                 <InfoRow label="Weather" value={responses.weather || "—"} />
+                <InfoRow label="Social" value={responses.social || "—"} />
+                {responses.social_audio_data && (
+                  <audio
+                    controls
+                    src={responses.social_audio_data}
+                    style={{ width: "100%", margin: "0.5rem 0" }}
+                  />
+                )}
                 <InfoRow label="Tempo" value={responses.tempo ? `${responses.tempo} BPM` : "—"} />
                 <InfoRow
                   label="Pitch"
