@@ -40,24 +40,17 @@ class StudyService {
   async saveSurveyResponses(sessionId, responses) {
     try {
       const token = localStorage.getItem('token');
-      const payload = { sessionId, responses };
-      const jsonString = JSON.stringify(payload);
-      const sizeMB = (new Blob([jsonString]).size / 1024 / 1024).toFixed(2);
-      console.log(`Sending survey responses: payload size=${sizeMB} MB, social_audio_data=${responses.social_audio_data ? 'present' : 'missing'}`);
-      
       const response = await fetch(`${this.baseUrl}/api/study/save-responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: jsonString,
+        body: JSON.stringify({ sessionId, responses }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to save survey responses:', response.status, errorText);
-        throw new Error(`Failed to save survey responses: ${response.status} ${errorText}`);
+        throw new Error('Failed to save survey responses');
       }
 
       return await response.json();

@@ -28,50 +28,11 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// Handle OPTIONS preflight requests BEFORE other middleware
-app.options('*', cors(corsOptions));
-
-// Apply CORS middleware
 app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
 
-// Increase body size limit for large base64 audio data (100MB)
-// Express 5 uses body-parser internally (which defaults to 100KB!)
-// Base64 encoding increases file size by ~33%, so a 75MB audio file becomes ~100MB
-// We must explicitly set this BEFORE any routes that need large payloads
-const jsonParser = express.json({ 
-  limit: 100 * 1024 * 1024, // 100MB in bytes (more explicit than string)
-  strict: false // Allow non-strict JSON parsing
-});
-
-// Log the configured limit on server startup
-const limitMB = (100 * 1024 * 1024) / (1024 * 1024);
-console.log(`Body parser configured with limit: ${limitMB}MB (${100 * 1024 * 1024} bytes)`);
-
-app.use(jsonParser);
-app.use(express.urlencoded({ 
-  limit: 100 * 1024 * 1024, // 100MB in bytes
-  extended: true,
-  parameterLimit: 1000000
-}));
-
-// Error handler for payload too large errors (must come after body parsers but before routes)
-app.use((err, req, res, next) => {
-  if (err && err.type === 'entity.too.large') {
-    console.error('Payload too large error:', {
-      limit: err.limit,
-      length: err.length,
-      type: err.type,
-      message: err.message
-    });
-    return res.status(413).json({ 
-      error: 'Payload too large',
-      limit: err.limit,
-      received: err.length,
-      details: `Request body size (${(err.length / 1024 / 1024).toFixed(2)} MB) exceeds limit (${(err.limit / 1024 / 1024).toFixed(2)} MB)`
-    });
-  }
-  next(err);
-});
+// Explicitly handle OPTIONS requests for all routes (preflight requests)
+app.options(/.*/, cors(corsOptions));
 
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -329,15 +290,8 @@ app.post('/api/study/save-responses', authenticateToken, (req, res) => {
       let insertedCount = 0;
       Object.entries(responses).forEach(([key, value]) => {
         if (value !== "" && value !== null && value !== undefined) {
-          const stringValue = String(value);
-          // Log social_audio_data size for debugging
-          if (key === 'social_audio_data') {
-            console.log(`Saving social_audio_data for session ${sessionId}: size=${stringValue.length} chars (${(stringValue.length / 1024 / 1024).toFixed(2)} MB)`);
-          }
-          stmt.run(sessionId, username, key, stringValue);
+          stmt.run(sessionId, username, key, String(value));
           insertedCount++;
-        } else if (key === 'social_audio_data') {
-          console.warn(`Warning: social_audio_data is empty/null/undefined for session ${sessionId}`);
         }
       });
       
@@ -448,13 +402,7 @@ app.get('/api/study/soundscapes', authenticateToken, (req, res) => {
         });
       }
       const entry = sessionsMap.get(row.session_id);
-      const parsedValue = parseAnswerValue(row.question_key, row.answer_value);
-      entry.responses[row.question_key] = parsedValue;
-      // Log social_audio_data retrieval for debugging
-      if (row.question_key === 'social_audio_data') {
-        const hasData = parsedValue && typeof parsedValue === 'string' && parsedValue.length > 0;
-        console.log(`Retrieved social_audio_data for session ${row.session_id}: hasData=${hasData}, size=${hasData ? parsedValue.length : 0} chars`);
-      }
+      entry.responses[row.question_key] = parseAnswerValue(row.question_key, row.answer_value);
       if (!entry.createdAt || (row.created_at && row.created_at < entry.createdAt)) {
         entry.createdAt = row.created_at;
       }
