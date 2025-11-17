@@ -32,7 +32,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // Explicitly handle OPTIONS requests for all routes (preflight requests)
-app.options('*', cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -331,6 +331,91 @@ app.post('/api/study/save-responses', authenticateToken, (req, res) => {
     console.error('Error saving responses:', error);
     res.status(500).json({ error: "Failed to save responses", details: error.message });
   }
+});
+
+const NUMERIC_RESPONSE_KEYS = new Set([
+  'tempo',
+  'pitch',
+  'mood_volume',
+  'place_volume',
+  'weather_volume',
+  'day_rating'
+]);
+
+function parseAnswerValue(key, value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const trimmed = String(value).trim();
+  if (trimmed === '') {
+    return '';
+  }
+  if (NUMERIC_RESPONSE_KEYS.has(key)) {
+    const num = Number(trimmed);
+    if (!Number.isNaN(num)) {
+      return num;
+    }
+  }
+  if (trimmed.toLowerCase() === 'true') return true;
+  if (trimmed.toLowerCase() === 'false') return false;
+  return trimmed;
+}
+
+// Fetch grouped survey responses for the authenticated user
+app.get('/api/study/soundscapes', authenticateToken, (req, res) => {
+  const username = req.user.username;
+  if (!username) {
+    return res.status(400).json({ error: 'Username missing from token' });
+  }
+
+  const query = `
+    SELECT 
+      sr.session_id,
+      sr.question_key,
+      sr.answer_value,
+      sr.created_at,
+      s.study_day,
+      s.completed_at
+    FROM survey_responses sr
+    LEFT JOIN study_sessions s ON s.id = sr.session_id
+    WHERE sr.username = ?
+    ORDER BY sr.session_id DESC, sr.created_at ASC
+  `;
+
+  db.all(query, [username], (err, rows) => {
+    if (err) {
+      console.error('Error fetching soundscapes:', err);
+      return res.status(500).json({ error: 'Failed to fetch soundscapes' });
+    }
+
+    const sessionsMap = new Map();
+
+    rows.forEach(row => {
+      if (!row.session_id) return;
+      if (!sessionsMap.has(row.session_id)) {
+        sessionsMap.set(row.session_id, {
+          sessionId: row.session_id,
+          studyDay: row.study_day || null,
+          createdAt: row.created_at,
+          completedAt: row.completed_at,
+          responses: {}
+        });
+      }
+      const entry = sessionsMap.get(row.session_id);
+      entry.responses[row.question_key] = parseAnswerValue(row.question_key, row.answer_value);
+      if (!entry.createdAt || (row.created_at && row.created_at < entry.createdAt)) {
+        entry.createdAt = row.created_at;
+      }
+    });
+
+    const soundscapes = Array.from(sessionsMap.values()).sort((a, b) => {
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    res.json({ success: true, soundscapes });
+  });
 });
 
 // Get study progress for authenticated user

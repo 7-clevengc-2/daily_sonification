@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react
 import Signup from './Signup.jsx';
 import Login from './Login.jsx';
 import SoundscapePage from './pages/SoundscapePage';
+import SoundscapeHistory from './pages/SoundscapeHistory';
 import UploadSound from './pages/UploadSound';
 import Survey from './pages/Survey';
 import Admin from './pages/Admin';
@@ -20,6 +21,7 @@ function App() {
               <ul className="nav-list">
                 <li><Link to="/" className="nav-link">Home</Link></li>
                 <li><Link to="/soundscape" className="nav-link">Soundscape</Link></li>
+                <li><Link to="/soundscapes/history" className="nav-link">History</Link></li>
                 <li><Link to="/survey" className="nav-link">Survey</Link></li>
                 <li><Link to="/upload" className="nav-link">Upload</Link></li>
                 <li><Link to="/admin" className="nav-link">Admin</Link></li>
@@ -45,6 +47,11 @@ function App() {
               <Route path="/soundscape" element={
                 <ProtectedRoute>
                   <SoundscapePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/soundscapes/history" element={
+                <ProtectedRoute>
+                  <SoundscapeHistory />
                 </ProtectedRoute>
               } />
               <Route path="/login" element={<Login />} />

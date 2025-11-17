@@ -80,6 +80,30 @@ class StudyService {
     }
   }
 
+  async getSoundscapes() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      const response = await fetch(`${this.baseUrl}/api/study/soundscapes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch soundscapes');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching soundscapes:', error);
+      throw error;
+    }
+  }
+
   // Store current study day in localStorage for user convenience
   setCurrentStudyDay(day) {
     localStorage.setItem('study_current_day', day.toString());
