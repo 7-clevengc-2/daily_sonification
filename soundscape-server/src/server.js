@@ -28,6 +28,10 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+// Handle OPTIONS preflight requests BEFORE other middleware
+app.options('*', cors(corsOptions));
+
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
 // Increase body size limit for large base64 audio data (100MB)
@@ -50,7 +54,7 @@ app.use(express.urlencoded({
   parameterLimit: 1000000
 }));
 
-// Add error handler for payload too large errors to provide better debugging
+// Error handler for payload too large errors (must come after body parsers but before routes)
 app.use((err, req, res, next) => {
   if (err && err.type === 'entity.too.large') {
     console.error('Payload too large error:', {
@@ -68,9 +72,6 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-
-// Explicitly handle OPTIONS requests for all routes (preflight requests)
-app.options(/.*/, cors(corsOptions));
 
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
