@@ -330,13 +330,13 @@ function Survey() {
     // Update detune for all players
     const detune = pitchToDetune(newPitch);
     if (weatherPlayerRef.current) {
-      weatherPlayerRef.current.detune.value = detune;
+      weatherPlayerRef.current.detune = detune;
     }
     if (moodPlayerRef.current) {
-      moodPlayerRef.current.detune.value = detune;
+      moodPlayerRef.current.detune = detune;
     }
     if (placePlayerRef.current) {
-      placePlayerRef.current.detune.value = detune;
+      placePlayerRef.current.detune = detune;
     }
   }
 
