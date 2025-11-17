@@ -4,7 +4,6 @@ import Signup from './Signup.jsx';
 import Login from './Login.jsx';
 import SoundscapePage from './pages/SoundscapePage';
 import SoundscapeHistory from './pages/SoundscapeHistory';
-import UploadSound from './pages/UploadSound';
 import Survey from './pages/Survey';
 import Admin from './pages/Admin';
 import StudyDayManager from './pages/StudyDayManager';
@@ -21,10 +20,8 @@ function App() {
             <div className="container">
               <ul className="nav-list">
                 <li><Link to="/" className="nav-link">Home</Link></li>
-                <li><Link to="/soundscape" className="nav-link">Soundscape</Link></li>
                 <li><Link to="/soundscapes/history" className="nav-link">History</Link></li>
                 <li><Link to="/survey" className="nav-link">Survey</Link></li>
-                <li><Link to="/upload" className="nav-link">Upload</Link></li>
                 <li><Link to="/study-day" className="nav-link">Study Day</Link></li>
                 <li><Link to="/admin" className="nav-link">Admin</Link></li>
                 <li style={{ marginLeft: "auto" }}>
@@ -58,11 +55,6 @@ function App() {
               } />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/upload" element={
-                <ProtectedRoute>
-                  <UploadSound />
-                </ProtectedRoute>
-              } />
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <Admin />

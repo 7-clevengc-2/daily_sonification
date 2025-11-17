@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as Tone from "tone";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // Stores the names and urls for the sounds (some current sounds are duplicates so I can test functionality with limited audio files)
 const mood_sounds = [
@@ -55,7 +55,16 @@ function pitchToDetune(pitch) {
 
 function SoundscapePage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const survey = location.state;
+
+  // Redirect if user didn't come from Survey or SoundscapeHistory
+  useEffect(() => {
+    if (!survey) {
+      // User accessed SoundscapePage directly - redirect to Survey
+      navigate("/survey", { replace: true });
+    }
+  }, [survey, navigate]);
 
   // State for each sound selection
   const [moodIndex, setMoodIndex] = useState(0);
@@ -223,6 +232,11 @@ function SoundscapePage() {
         {isPlaying ? "Pause" : "Play"}
       </button>
     )
+  }
+
+  // Don't render if no survey data (will redirect)
+  if (!survey) {
+    return null;
   }
 
   // Main UI for the soundscape page
