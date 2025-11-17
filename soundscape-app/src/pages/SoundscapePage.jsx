@@ -3,9 +3,28 @@ import * as Tone from "tone";
 import { useLocation } from "react-router-dom";
 
 // Stores the names and urls for the sounds (some current sounds are duplicates so I can test functionality with limited audio files)
-const mood_sounds = [{calm : "/sounds/calm_pad.wav"}, {stressed : "/sounds/stress.wav"}, {happy: "/sounds/768286__lolamoore__happy.mp3"}]; 
-const location_sounds = [{forest : "/sounds/forest_birds.wav"}, {city : "/sounds/traffic.wav"}, {beach: "/sounds/beach.wav"}];
-const weather_sounds = [{raining : "/sounds/thunder.wav"}, {windy : "/sounds/really_windy.wav"}, {sunny: "/sounds/sun_rays.mp3"}];
+const mood_sounds = [
+  { calm: "/sounds/calm_pad.wav" },
+  { stressed: "/sounds/stress.wav" },
+  { happy: "/sounds/768286__lolamoore__happy.mp3" },
+  { bored: "/sounds/531853__sondredrakensson__do-robots-get-bored-2.mp3"},
+  { sad: "/sounds/831758__akkaittou__sadatmosphericguitarsoundtrack2.wav"},
+  { angry: "sounds/579268__nomiqbomi__angry-drone-1.mp3"}
+]; 
+
+const location_sounds = [
+  { forest: "/sounds/forest_birds.wav" }, 
+  { "city/suburb": "/sounds/traffic.wav" }, 
+  { water: "/sounds/beach.wav" }, 
+  { plains: "/sounds/525268__thesuprememuffinpooter__dry-grass-rustle.wav" },
+  { home: "/sounds/799197__newlocknew__ambhome_kitchenthe-old-apartmentwall-clockventilation-noise.wav" }];
+
+const weather_sounds = [
+  { raining: "/sounds/thunder.wav" }, 
+  { windy: "/sounds/really_windy.wav" }, 
+  { sunny: "/sounds/cicada-72075.mp3" }, 
+  { "foggy/cloudy": "/sounds/Fog Rolling In.m4a" }, 
+  { "snowing/hailing": "/sounds/snow-footstep-sfx-16100.mp3" }];
 
 function getIndexFromAnswer(list, answer) {
   return list.findIndex(obj => Object.keys(obj)[0].toLowerCase() === answer?.toLowerCase());
