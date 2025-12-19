@@ -1,4 +1,4 @@
-import React from "react";  //Javascript library used to build UI using components
+import React, { useEffect } from "react";  //Javascript library used to build UI using components
 import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom'; //React pages are served from the local React app running in the browser
 import Signup from './Signup.jsx';
 import Login from './Login.jsx';
@@ -97,9 +97,83 @@ function LogoutButton() {
   );
 }
 
+
+// Manually created list of all sound URLs for maximum performance
+const allSoundUrls = [
+  // Mood sounds
+  "/sounds/calm_pad.wav",
+  "/sounds/stress.wav",
+  "/sounds/768286__lolamoore__happy.mp3",
+  "/sounds/531853__sondredrakensson__do-robots-get-bored-2.mp3",
+  "/sounds/831758__akkaittou__sadatmosphericguitarsoundtrack2.wav",
+  "/sounds/579268__nomiqbomi__angry-drone-1.mp3",
+  // Location sounds
+  "/sounds/forest_birds.wav",
+  "/sounds/traffic.wav",
+  "/sounds/beach.wav",
+  "/sounds/525268__thesuprememuffinpooter__dry-grass-rustle.wav",
+  "/sounds/799197__newlocknew__ambhome_kitchenthe-old-apartmentwall-clockventilation-noise.wav",
+  // Weather sounds
+  "/sounds/thunder.wav",
+  "/sounds/really_windy.wav",
+  "/sounds/cicada-72075.mp3",
+  "/sounds/Fog Rolling In.m4a",
+  "/sounds/snow-footstep-sfx-16100.mp3",
+];
+/**
+ * EAGER LOADING FUNCTION
+ * Preloads all sound files when the home page mounts.
+ * 
+ * To disable eager loading and use lazy loading in Survey instead:
+ * Comment out the useEffect call that invokes this function in the HomePage component.
+ */
+
+async function eagerLoadSounds() {
+  const startTime = performance.now();
+  try {
+    // Preload all sounds using fetch() - this works without user interaction
+    // Files will be cached in the browser's HTTP cache, making them instantly available
+    // when Tone.js loads them later (no AudioContext required for fetch)
+    const loadPromises = allSoundUrls.map(async (url) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        // Read the response to ensure it's fully downloaded and cached
+        await response.blob();
+        console.log(`Eager loaded: ${url}`);
+      } catch (error) {
+        console.warn(`Failed to eager load ${url}:`, error);
+      }
+    });
+
+    await Promise.all(loadPromises);
+    console.log(`Eager loading complete: ${loadPromises.length} sounds preloaded`);
+  } catch (error) {
+    console.error("Error during eager loading:", error);
+  }
+  const endTime = performance.now();
+  const totalTime = endTime - startTime;
+  console.log(`Sound load time for eager loading: ${totalTime}ms`);
+}
+
+
 // Home page component
 function HomePage() {
   const { isAuthenticated } = useAuth();
+
+  // ============================================
+  // EAGER LOADING: Comment out the block below to disable eager loading
+  // ============================================
+  /*
+  useEffect(() => {
+    eagerLoadSounds();
+  }, []);
+  */
+  // ============================================
+  // End of eager loading block
+  // ============================================
 
   return (
     <div className="container" style={{ paddingTop: "var(--spacing-2xl)", paddingBottom: "var(--spacing-2xl)" }}>
