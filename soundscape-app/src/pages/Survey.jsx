@@ -211,6 +211,7 @@ function Survey() {
 
   // Play a sample sound for a given category and option
   async function playSample(category, option) {
+    const startTime = performance.now();
     // Map category/option to sound URL
     let soundUrl = null;
     const detune = pitchToDetune(answers.pitch);
@@ -234,7 +235,11 @@ function Survey() {
       const weatherPlayer = new Tone.GrainPlayer({ url: soundUrl, loop: true, detune: detune }).toDestination();
       weatherPlayer.playbackRate = playbackRate;
       weatherPlayerRef.current = weatherPlayer;
-      Tone.Transport.start();
+      // Wait for the buffer to be fully loaded before starting
+      await weatherPlayer.loaded;
+      if (Tone.Transport.state !== "started") {
+        Tone.Transport.start();
+      }
       weatherPlayer.sync().start(0);
 
     } else if (category === "place") {
@@ -245,7 +250,11 @@ function Survey() {
       const placePlayer = new Tone.GrainPlayer({ url: soundUrl, loop: true, detune: detune }).toDestination();
       placePlayer.playbackRate = playbackRate;
       placePlayerRef.current = placePlayer;
-      Tone.Transport.start();
+      // Wait for the buffer to be fully loaded before starting
+      await placePlayer.loaded;
+      if (Tone.Transport.state !== "started") {
+        Tone.Transport.start();
+      }
       placePlayer.sync().start(0);
 
     } else if (category === "mood") {
@@ -256,9 +265,18 @@ function Survey() {
       const moodPlayer = new Tone.GrainPlayer({ url: soundUrl, loop: true, detune: detune }).toDestination();
       moodPlayer.playbackRate = playbackRate;
       moodPlayerRef.current = moodPlayer;
-      Tone.Transport.start();
+      // Wait for the buffer to be fully loaded before starting
+      await moodPlayer.loaded;
+      if (Tone.Transport.state !== "started") {
+        Tone.Transport.start();
+      }
       moodPlayer.sync().start(0);
     }
+    
+    const endTime = performance.now();
+    const totalTime = endTime - startTime;
+    console.log(`Sound load and play time for ${category}: ${totalTime}ms`);
+    
   }
 
   // Handle local file upload for a category and autoplay it
@@ -291,13 +309,18 @@ function Survey() {
       const player = new Tone.GrainPlayer({ url, loop: true, detune: detune }).toDestination();
       player.playbackRate = playbackRate;
       playerRef.current = player;
-      Tone.Transport.start();
+      // Wait for the buffer to be fully loaded before starting
+      await player.loaded;
+      if (Tone.Transport.state !== "started") {
+        Tone.Transport.start();
+      }
       player.sync().start(0);
     }
   }
 
   // Updates the answers state when a user selects an option
-  function handleSelect(option, currentQuestion) {
+  async function handleSelect(option, currentQuestion) {
+    const startTime = performance.now();
     if (!currentQuestion) return;
     const key = currentQuestion.key;
     setAnswers(prev => ({
@@ -306,8 +329,11 @@ function Survey() {
     }));
     // Play sample sound if this is a sound-linked question
     if (["weather", "place", "mood"].includes(key)) {
-      playSample(key, option);
+      await playSample(key, option);
     }
+    const endTime = performance.now();
+    const totalTime = endTime - startTime;
+    console.log(`Button click and sample play time for ${currentQuestion.question}: ${totalTime}ms`);
   }
 
   // For tempo slider
@@ -703,7 +729,7 @@ function Survey() {
             {currentQuestion.options.map(option => (
               <button
                 key={option}
-                onClick={() => handleSelect(option, currentQuestion)}
+                onClick={() => handleSelect(option, currentQuestion)}  //When the user clicks a button, the handleSelect function is called to update the answers tate then play the sample.
                 style={{
                   display: "block",
                   margin: "1rem auto",
