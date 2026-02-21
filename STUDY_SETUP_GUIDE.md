@@ -14,7 +14,7 @@ Added two new tables to store study data:
 ### 2. User Authentication System
 - Study participants must create accounts and log in
 - User accounts contain only username and password (no personal information)
-- Participants can be tracked across the 9-day study period using their user ID
+- Participants can be tracked across the 14-day study period using their user ID
 - Authentication ensures reliable tracking across devices and browser sessions
 
 ### 3. Backend API Endpoints
@@ -27,7 +27,7 @@ New endpoints added to the server:
 
 ### 4. Frontend Integration
 - Survey responses are now automatically saved to the database
-- Study day tracking (1-9) with progress indicators
+- Study day tracking (1-14) with progress indicators
 - User authentication required for study participation
 - Loading states during data saving
 
@@ -35,7 +35,7 @@ New endpoints added to the server:
 
 ### For Participants:
 1. **Account Creation**: Create a username and password account
-2. **Daily Survey**: Log in and complete survey for each of 9 days
+2. **Daily Survey**: Log in and complete survey for each of 14 days
 3. **Progress Tracking**: System tracks which days are completed per user
 4. **Soundscape Creation**: Survey responses create personalized soundscapes
 
@@ -105,7 +105,7 @@ user_id,username,study_day,session_created,session_completed,question_key,answer
 4. Monitor participation via admin panel
 
 ### During the Study:
-- Participants log in and access the site daily for 9 days
+- Participants log in and access the site daily for 14 days
 - Each day creates a new session linked to their user account
 - Survey responses are automatically saved
 - Progress is tracked per user account

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import studyService from "../services/studyService";
 
 const MIN_DAY = 1;
-const MAX_DAY = 9;
+const MAX_DAY = 14;
 
 function clampDay(value) {
   if (Number.isNaN(value)) return MIN_DAY;

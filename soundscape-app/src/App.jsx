@@ -166,11 +166,11 @@ function HomePage() {
   // ============================================
   // EAGER LOADING: Comment out the block below to disable eager loading
   // ============================================
-  /*
+  
   useEffect(() => {
     eagerLoadSounds();
   }, []);
-  */
+  
   // ============================================
   // End of eager loading block
   // ============================================

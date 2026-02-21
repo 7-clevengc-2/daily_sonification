@@ -115,7 +115,7 @@ function SoundscapeHistory() {
             <div key={entry.sessionId} className="card">
               <div className="card-header">
                 <div style={{ fontWeight: 600 }}>
-                  {entry.studyDay ? `Study Day ${entry.studyDay}` : "Soundscape"}
+                  {entry.studyDay ? `Journal Entry ${entry.studyDay}` : "Soundscape"}
                 </div>
                 <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
                   {formatDate(entry.createdAt)}
