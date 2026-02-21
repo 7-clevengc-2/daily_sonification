@@ -10,13 +10,13 @@ import { useAuth } from "../AuthContext";
 const QUESTION_AVAILABILITY = {
   weather: 1,
   place: 1,
-  day_rating: 2,
-  mood: 2,
-  tempo: 3,
-  pitch: 4,
-  volume_control: 5,
-  social_people: 6,
-  social: 6,
+  day_rating: 3,
+  mood: 3,
+  tempo: 5,
+  pitch: 7,
+  volume_control: 9,
+  social_people: 11,
+  social: 11,
 };
 
 const ALL_QUESTIONS = [
@@ -594,7 +594,7 @@ function Survey() {
           fontSize: "0.9rem",
           color: "#666"
         }}>
-          Study Day {studyDay} of 9 - User: {user.username}
+          Diary Entry {studyDay}
         </div>
       )}
       <div style={{ margin: "2rem 0" }}>

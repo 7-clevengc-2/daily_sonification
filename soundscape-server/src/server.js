@@ -333,6 +333,14 @@ app.post('/api/study/save-responses', authenticateToken, (req, res) => {
   }
 });
 
+// SQLite CURRENT_TIMESTAMP is UTC but has no 'Z' suffix. Send as ISO UTC so the client parses correctly.
+function sqliteUtcToIso(str) {
+  if (str == null || str === '') return null;
+  const s = String(str).trim();
+  if (!s) return null;
+  return s.replace(' ', 'T') + (s.endsWith('Z') ? '' : 'Z');
+}
+
 const NUMERIC_RESPONSE_KEYS = new Set([
   'tempo',
   'pitch',
@@ -396,15 +404,19 @@ app.get('/api/study/soundscapes', authenticateToken, (req, res) => {
         sessionsMap.set(row.session_id, {
           sessionId: row.session_id,
           studyDay: row.study_day || null,
-          createdAt: row.created_at,
-          completedAt: row.completed_at,
+          createdAt: sqliteUtcToIso(row.created_at),
+          completedAt: sqliteUtcToIso(row.completed_at),
           responses: {}
         });
       }
       const entry = sessionsMap.get(row.session_id);
       entry.responses[row.question_key] = parseAnswerValue(row.question_key, row.answer_value);
-      if (!entry.createdAt || (row.created_at && row.created_at < entry.createdAt)) {
-        entry.createdAt = row.created_at;
+      const rowCreated = row.created_at;
+      if (rowCreated) {
+        const rowIso = sqliteUtcToIso(rowCreated);
+        if (!entry.createdAt || new Date(rowIso) < new Date(entry.createdAt)) {
+          entry.createdAt = rowIso;
+        }
       }
     });
 
