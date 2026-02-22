@@ -91,6 +91,12 @@ const weather_sounds = [
   { "snowing/hailing": "/sounds/snow-footstep-sfx-16100.mp3" },
 ];
 
+// Explicit audio MIME types and extensions so iOS Safari shows audio sources
+// (Voice Memos, Files, etc.) instead of defaulting to Photos/video only.
+// accept="audio/*" is ignored on iOS and only shows .mov/photos.
+const AUDIO_ACCEPT =
+  "audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,.mp3,.wav,.m4a,.aac,.ogg,.webm,audio/*";
+
 function getIndexFromAnswer(list, answer) {
   return list.findIndex(
     (obj) => Object.keys(obj)[0].toLowerCase() === answer?.toLowerCase()
@@ -697,7 +703,7 @@ function Survey() {
               <div style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>Or upload an audio file</div>
               <input
                 type="file"
-                accept="audio/*"
+                accept={AUDIO_ACCEPT}
                 onChange={e => handleSocialUpload(e.target.files?.[0])}
               />
             </div>
@@ -752,7 +758,7 @@ function Survey() {
                 <div style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>Or upload your own sound</div>
                 <input
                   type="file"
-                  accept="audio/*"
+                  accept={AUDIO_ACCEPT}
                   onChange={e => handleUpload(currentKey, e.target.files?.[0])}
                 />
                 {answers[`${currentKey}_custom_url`] && (
