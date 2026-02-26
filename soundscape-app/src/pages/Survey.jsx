@@ -141,6 +141,13 @@ function Survey() {
   const [studyDay, setStudyDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Daily limit state
+  const [dailyLimitReached, setDailyLimitReached] = useState(false);
+  const [showAdminInput, setShowAdminInput] = useState(false);
+  const [adminKeyInput, setAdminKeyInput] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminBypassActive, setAdminBypassActive] = useState(!!localStorage.getItem('adminBypass'));
+
   // Track if the user has interacted with the tempo slider
   const [tempoTouched, setTempoTouched] = useState(false);
   // Track if the user has interacted with the pitch slider
@@ -176,13 +183,15 @@ function Survey() {
         setStudyDay(currentStudyDay);
       } catch (error) {
         console.error('Failed to initialize study session:', error);
-        // If authentication error, redirect to login
+        if (error.code === 'daily_limit') {
+          setDailyLimitReached(true);
+          return;
+        }
         if (error.message && (error.message.includes('expired') || error.message.includes('invalid') || error.message.includes('token'))) {
           alert('Your session has expired. Please log in again.');
           navigate('/login');
           return;
         }
-        // Continue with survey even if session creation fails (user can still complete survey)
       }
     };
 
@@ -556,6 +565,34 @@ function Survey() {
     }
   }
 
+  const handleAdminOverride = async () => {
+    setAdminError("");
+    if (!adminKeyInput.trim()) {
+      setAdminError("Please enter the admin code.");
+      return;
+    }
+    try {
+      const currentStudyDay = studyService.getCurrentStudyDay();
+      const sessionData = await studyService.startStudySession(currentStudyDay, adminKeyInput.trim());
+      localStorage.setItem('adminBypass', adminKeyInput.trim());
+      setAdminBypassActive(true);
+      setSessionId(sessionData.sessionId);
+      setStudyDay(currentStudyDay);
+      setDailyLimitReached(false);
+    } catch (error) {
+      if (error.code === 'daily_limit') {
+        setAdminError("Invalid admin code.");
+      } else {
+        setAdminError("Failed to override. Please try again.");
+      }
+    }
+  };
+
+  const handleDisableAdminBypass = () => {
+    localStorage.removeItem('adminBypass');
+    setAdminBypassActive(false);
+  };
+
   // Determine if Continue should be enabled
   const availableQuestions = useMemo(
     () =>
@@ -566,27 +603,113 @@ function Survey() {
   );
   const totalSteps = availableQuestions.length;
   const currentQuestion = availableQuestions[step] || availableQuestions[availableQuestions.length - 1];
-  if (!currentQuestion) {
-    return null;
-  }
 
-  const currentKey = currentQuestion.key;
-  const isTempo = currentQuestion.isTempo;
-  const isPitch = currentQuestion.isPitch;
-  const isSocialAudio = currentQuestion.isSocialAudio;
+  const currentKey = currentQuestion ? currentQuestion.key : null;
+  const isTempo = currentQuestion ? currentQuestion.isTempo : false;
+  const isPitch = currentQuestion ? currentQuestion.isPitch : false;
+  const isSocialAudio = currentQuestion ? currentQuestion.isSocialAudio : false;
   const isAnswered = isTempo
     ? tempoTouched
     : isPitch
       ? pitchTouched
       : isSocialAudio
         ? Boolean(answers.social_audio_data)
-        : answers[currentKey] !== "";
+        : currentKey ? answers[currentKey] !== "" : false;
 
   useEffect(() => {
     if (step > totalSteps - 1) {
       setStep(totalSteps > 0 ? totalSteps - 1 : 0);
     }
   }, [step, totalSteps]);
+
+  if (dailyLimitReached) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center", maxWidth: "500px", margin: "0 auto" }}>
+        <h2>Daily Soundscape Survey</h2>
+        <div style={{
+          marginTop: "2rem",
+          padding: "2rem",
+          backgroundColor: "var(--primary-50, #f0f9ff)",
+          borderRadius: "12px",
+          border: "1px solid var(--primary-200, #bae6fd)",
+        }}>
+          <p style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "var(--secondary-700, #3f3f46)" }}>
+            You've already completed today's survey. Come back tomorrow!
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              padding: "0.75rem 2rem",
+              fontSize: "1rem",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: "var(--primary-500, #0ea5e9)",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
+            Go Home
+          </button>
+        </div>
+
+        <div style={{ marginTop: "2rem" }}>
+          {!showAdminInput ? (
+            <button
+              onClick={() => setShowAdminInput(true)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--secondary-400, #a1a1aa)",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                textDecoration: "underline",
+              }}
+            >
+              Admin Override
+            </button>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+              <input
+                type="password"
+                placeholder="Enter admin code"
+                value={adminKeyInput}
+                onChange={(e) => setAdminKeyInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdminOverride()}
+                style={{
+                  padding: "0.5rem 1rem",
+                  borderRadius: "6px",
+                  border: "1px solid var(--secondary-300, #d4d4d8)",
+                  fontSize: "0.9rem",
+                  width: "220px",
+                }}
+              />
+              <button
+                onClick={handleAdminOverride}
+                style={{
+                  padding: "0.5rem 1.5rem",
+                  fontSize: "0.9rem",
+                  borderRadius: "6px",
+                  border: "none",
+                  backgroundColor: "var(--secondary-600, #52525b)",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                Submit
+              </button>
+              {adminError && (
+                <p style={{ color: "red", fontSize: "0.85rem", margin: 0 }}>{adminError}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return null;
+  }
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
@@ -601,6 +724,36 @@ function Survey() {
           color: "#666"
         }}>
           Diary Entry {studyDay}
+        </div>
+      )}
+      {adminBypassActive && (
+        <div style={{
+          marginBottom: "1rem",
+          padding: "0.4rem 1rem",
+          backgroundColor: "#fff3cd",
+          border: "1px solid #ffc107",
+          borderRadius: "4px",
+          fontSize: "0.8rem",
+          color: "#856404",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.5rem",
+        }}>
+          Admin mode: daily limit disabled
+          <button
+            onClick={handleDisableAdminBypass}
+            style={{
+              background: "none",
+              border: "1px solid #856404",
+              borderRadius: "4px",
+              color: "#856404",
+              cursor: "pointer",
+              fontSize: "0.75rem",
+              padding: "0.15rem 0.5rem",
+            }}
+          >
+            Turn Off
+          </button>
         </div>
       )}
       <div style={{ margin: "2rem 0" }}>

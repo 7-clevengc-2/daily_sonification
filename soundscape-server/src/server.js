@@ -232,33 +232,61 @@ app.post('/logout', (req, res) => {
 
 // Start a new study session
 app.post('/api/study/start-session', authenticateToken, (req, res) => {
-  const { studyDay } = req.body;
+  const { studyDay, adminKey } = req.body;
   const userId = req.user.id;
   const username = req.user.username;
   
   if (!userId) {
     return res.status(400).json({ error: "User ID not found in token" });
   }
-  
-  const stmt = db.prepare("INSERT INTO study_sessions (user_id, study_day) VALUES (?, ?)");
-  
-  stmt.run(userId, studyDay, function(err) {
-    if (err) {
-      console.error('Error creating study session:', err);
-      return res.status(500).json({ error: "Failed to create study session", details: err.message });
-    }
-    
-    console.log(`Created session ${this.lastID} for user ${username} (ID: ${userId}), study day ${studyDay}`);
-    
-    res.json({ 
-      success: true, 
-      userId,
-      sessionId: this.lastID,
-      studyDay 
+
+  const isAdmin = adminKey && process.env.ADMIN_KEY && adminKey === process.env.ADMIN_KEY;
+
+  const createSession = () => {
+    const stmt = db.prepare("INSERT INTO study_sessions (user_id, study_day) VALUES (?, ?)");
+    stmt.run(userId, studyDay, function(err) {
+      if (err) {
+        console.error('Error creating study session:', err);
+        return res.status(500).json({ error: "Failed to create study session", details: err.message });
+      }
+      
+      console.log(`Created session ${this.lastID} for user ${username} (ID: ${userId}), study day ${studyDay}`);
+      
+      res.json({ 
+        success: true, 
+        userId,
+        sessionId: this.lastID,
+        studyDay 
+      });
+      
+      stmt.finalize();
     });
-    
-    stmt.finalize();
-  });
+  };
+
+  if (isAdmin) {
+    return createSession();
+  }
+
+  db.get(
+    "SELECT id FROM study_sessions WHERE user_id = ? AND completed_at IS NOT NULL AND DATE(completed_at) = DATE('now')",
+    [userId],
+    (err, row) => {
+      if (err) {
+        console.error('Error checking daily limit:', err);
+        return res.status(500).json({ error: "Failed to check daily limit", details: err.message });
+      }
+
+      if (row) {
+        return res.status(429).json({
+          success: false,
+          error: "daily_limit",
+          message: "You have already completed a survey today. Please come back tomorrow."
+        });
+      }
+
+      createSession();
+    }
+  );
 });
 
 // Save survey responses

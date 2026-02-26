@@ -5,13 +5,15 @@ class StudyService {
     this.baseUrl = config.apiBaseUrl;
   }
 
-  async startStudySession(studyDay) {
+  async startStudySession(studyDay, adminKey) {
     try {
       const token = localStorage.getItem('token');
       
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
+
+      const resolvedAdminKey = adminKey || localStorage.getItem('adminBypass') || undefined;
       
       const response = await fetch(`${this.baseUrl}/api/study/start-session`, {
         method: 'POST',
@@ -19,13 +21,18 @@ class StudyService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ studyDay }),
+        body: JSON.stringify({ studyDay, adminKey: resolvedAdminKey }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 403) {
           throw new Error('Authentication token expired or invalid. Please log in again.');
+        }
+        if (response.status === 429 && errorData.error === 'daily_limit') {
+          const err = new Error(errorData.message || 'Daily limit reached');
+          err.code = 'daily_limit';
+          throw err;
         }
         throw new Error(errorData.error || errorData.details || 'Failed to start study session');
       }
