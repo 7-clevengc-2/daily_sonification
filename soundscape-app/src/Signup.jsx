@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import config from './config';
@@ -39,6 +39,11 @@ export default function Signup() {
 
   return (
     <div className="container" style={{ paddingTop: "var(--spacing-2xl)", paddingBottom: "var(--spacing-2xl)" }}>
+      <div style={{ maxWidth: "400px", margin: "0 auto" }}>
+        <Link to="/" className="btn btn-ghost" style={{ marginBottom: "var(--spacing-md)", fontSize: "1rem" }}>
+          &larr; Back
+        </Link>
+      </div>
       <div className="card" style={{ maxWidth: "400px", margin: "0 auto" }}>
         <div className="card-header text-center">
           <h2>Sign Up</h2>
