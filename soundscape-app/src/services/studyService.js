@@ -111,6 +111,24 @@ class StudyService {
     }
   }
 
+  async getDailyStatus() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
+    const response = await fetch(`${this.baseUrl}/api/study/daily-status`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch daily status');
+    }
+
+    return await response.json();
+  }
+
   // Store current study day in localStorage for user convenience
   setCurrentStudyDay(day) {
     localStorage.setItem('study_current_day', day.toString());

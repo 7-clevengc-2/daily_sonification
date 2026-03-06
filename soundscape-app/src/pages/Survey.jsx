@@ -170,7 +170,7 @@ function Survey() {
       // Check if user is authenticated
       if (!isAuthenticated) {
         console.error('User must be logged in to participate in the study');
-        navigate('/login');
+        navigate('/');
         return;
       }
 
@@ -189,7 +189,7 @@ function Survey() {
         }
         if (error.message && (error.message.includes('expired') || error.message.includes('invalid') || error.message.includes('token'))) {
           alert('Your session has expired. Please log in again.');
-          navigate('/login');
+          navigate('/');
           return;
         }
       }
@@ -637,7 +637,7 @@ function Survey() {
             You've already completed today's survey. Come back tomorrow!
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             style={{
               padding: "0.75rem 2rem",
               fontSize: "1rem",

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import studyService from "../services/studyService";
 
 function formatDate(dateString) {
@@ -59,7 +59,8 @@ function SoundscapeHistory() {
       state: { 
         ...entry.responses,
         studyDay: entry.studyDay,
-        recordedDate: entry.createdAt
+        recordedDate: entry.createdAt,
+        fromHistory: true
       } 
     });
   }
@@ -95,6 +96,9 @@ function SoundscapeHistory() {
 
   return (
     <div className="container" style={{ padding: "2rem 0" }}>
+      <div style={{ marginBottom: "var(--spacing-lg)" }}>
+        <Link to="/home" className="btn btn-ghost" style={{ fontSize: "1rem" }}>&larr; Back to Home</Link>
+      </div>
       <div className="text-center" style={{ marginBottom: "2rem" }}>
         <h1>Your Sonification Library</h1>
         <p style={{ color: "var(--text-secondary)" }}>

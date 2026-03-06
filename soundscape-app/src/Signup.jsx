@@ -28,8 +28,7 @@ export default function Signup() {
       // Store authentication data
       login(res.data.user, res.data.token);
       
-      // Redirect to survey page
-      navigate('/survey');
+      navigate('/home');
     } catch (e) {
       console.error('Signup error:', e.response?.data || e.message);
       setError(e.response?.data?.error || 'Signup failed. Please try again.');

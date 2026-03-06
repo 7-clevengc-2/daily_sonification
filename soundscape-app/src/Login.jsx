@@ -28,8 +28,7 @@ export default function Login() {
       // Store authentication data
       login(res.data.user, res.data.token);
       
-      // Redirect to survey page
-      navigate('/survey');
+      navigate('/home');
     } catch (e) {
       console.error('Login error:', e.response?.data || e.message);
       setError(e.response?.data?.error || 'Login failed. Please try again.');

@@ -230,6 +230,28 @@ app.post('/logout', (req, res) => {
 
 // Study API endpoints
 
+// Check if the user has already completed a survey today
+app.get('/api/study/daily-status', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID not found in token" });
+  }
+
+  db.get(
+    "SELECT id FROM study_sessions WHERE user_id = ? AND completed_at IS NOT NULL AND DATE(completed_at) = DATE('now')",
+    [userId],
+    (err, row) => {
+      if (err) {
+        console.error('Error checking daily status:', err);
+        return res.status(500).json({ error: "Failed to check daily status" });
+      }
+
+      res.json({ completedToday: !!row });
+    }
+  );
+});
+
 // Start a new study session
 app.post('/api/study/start-session', authenticateToken, (req, res) => {
   const { studyDay, adminKey } = req.body;

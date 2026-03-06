@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as Tone from "tone";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 // Stores the names and urls for the sounds (some current sounds are duplicates so I can test functionality with limited audio files)
 const mood_sounds = [
@@ -61,8 +61,7 @@ function SoundscapePage() {
   // Redirect if user didn't come from Survey or SoundscapeHistory
   useEffect(() => {
     if (!survey) {
-      // User accessed SoundscapePage directly - redirect to Survey
-      navigate("/survey", { replace: true });
+      navigate("/home", { replace: true });
     }
   }, [survey, navigate]);
 
@@ -300,6 +299,13 @@ function SoundscapePage() {
             </div>
           </div>
         )}
+        <div style={{ marginTop: "var(--spacing-xl)" }}>
+          {survey?.fromHistory ? (
+            <Link to="/soundscapes/history" className="btn btn-ghost" style={{ fontSize: "1rem" }}>&larr; Back to History</Link>
+          ) : (
+            <Link to="/home" className="btn btn-ghost" style={{ fontSize: "1rem" }}>&larr; Return to Home</Link>
+          )}
+        </div>
       </div>
     </div>
   );
