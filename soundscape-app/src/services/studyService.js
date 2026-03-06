@@ -139,12 +139,22 @@ class StudyService {
     return day ? parseInt(day) : 1;
   }
 
-  // Increment study day
+  // Increment study day, saving the previous day so the progress bar can animate
   incrementStudyDay() {
     const currentDay = this.getCurrentStudyDay();
+    localStorage.setItem('study_previous_day', currentDay.toString());
     const nextDay = currentDay + 1;
     this.setCurrentStudyDay(nextDay);
     return nextDay;
+  }
+
+  getPreviousStudyDay() {
+    const day = localStorage.getItem('study_previous_day');
+    return day ? parseInt(day) : null;
+  }
+
+  clearPreviousStudyDay() {
+    localStorage.removeItem('study_previous_day');
   }
 }
 

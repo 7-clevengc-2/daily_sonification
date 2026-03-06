@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import studyService from './services/studyService';
+import ProgressBar from './components/ProgressBar';
 
 function App() {
   return (
@@ -140,6 +141,9 @@ function HomePage() {
   const [surveyCompletedToday, setSurveyCompletedToday] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
 
+  const [currentDay] = useState(() => studyService.getCurrentStudyDay());
+  const [previousDay] = useState(() => studyService.getPreviousStudyDay());
+
   useEffect(() => {
     eagerLoadSounds();
   }, []);
@@ -165,6 +169,10 @@ function HomePage() {
     navigate('/');
   };
 
+  const handleProgressAnimationComplete = () => {
+    studyService.clearPreviousStudyDay();
+  };
+
   return (
     <div className="container" style={{ paddingTop: "var(--spacing-xl)", paddingBottom: "var(--spacing-2xl)" }}>
       {/* Top bar: Settings + Logout */}
@@ -175,9 +183,15 @@ function HomePage() {
 
       <div className="text-center animate-fade-in">
         <h1 style={{ marginBottom: "var(--spacing-lg)" }}>Daily Sonification</h1>
-        <p style={{ fontSize: "1.125rem", marginBottom: "var(--spacing-2xl)" }}>
+        <p style={{ fontSize: "1.125rem", marginBottom: "var(--spacing-xl)" }}>
           What would you like to do today?
         </p>
+
+        <ProgressBar
+          currentDay={currentDay}
+          previousDay={previousDay}
+          onAnimationComplete={handleProgressAnimationComplete}
+        />
 
         <div style={{
           display: "flex",
