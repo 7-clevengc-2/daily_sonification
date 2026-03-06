@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as Tone from "tone";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 
@@ -77,6 +77,7 @@ function SoundscapePage() {
   // State that stores the current player objects
   const [players, setPlayers] = useState(null)
   const [blobUrls, setBlobUrls] = useState([]);
+  const playersRef = useRef(null);
 
   // State for whether the sounds are playing
   const [neverPlayed, setNeverPlayed] = useState(true);
@@ -187,7 +188,12 @@ function SoundscapePage() {
     }
   };
 
-  // On unmount, revoke any blob URLs tracked here and dispose players
+  // Keep ref in sync so the unmount effect can access the latest players
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
+
+  // On dependency change, dispose old players and revoke old blob URLs
   useEffect(() => {
     return () => {
       if (players) {
@@ -196,6 +202,17 @@ function SoundscapePage() {
       blobUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch (_) {} });
     };
   }, [players, blobUrls]);
+
+  // On unmount only, stop the Transport so audio doesn't continue after navigating away
+  useEffect(() => {
+    return () => {
+      if (playersRef.current) {
+        try { playersRef.current.forEach(p => p.stop().dispose()); } catch (_) {}
+      }
+      Tone.Transport.stop();
+      Tone.Transport.cancel(0);
+    };
+  }, []);
 
   // Creates buttons that cycle through sounds in specified categories when pressed (mood, location, weather)
   function SoundButton({ sound_list, selectedIndex, setSelectedIndex }) {

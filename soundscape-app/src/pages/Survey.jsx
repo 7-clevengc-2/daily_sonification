@@ -504,6 +504,10 @@ function Survey() {
 
   useEffect(() => {
     return () => {
+      stopAndDisposePlayer(weatherPlayerRef);
+      stopAndDisposePlayer(placePlayerRef);
+      stopAndDisposePlayer(moodPlayerRef);
+      Tone.Transport.stop();
       if (isRecording) {
         stopRecording();
       }
