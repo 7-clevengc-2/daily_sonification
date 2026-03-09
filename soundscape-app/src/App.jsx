@@ -6,6 +6,7 @@ import SoundscapePage from './pages/SoundscapePage';
 import SoundscapeHistory from './pages/SoundscapeHistory';
 import Survey from './pages/Survey';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import studyService from './services/studyService';
@@ -44,6 +45,11 @@ function App() {
               <Route path="/settings" element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
                 </ProtectedRoute>
               } />
             </Routes>
@@ -140,6 +146,7 @@ function HomePage() {
   const navigate = useNavigate();
   const [surveyCompletedToday, setSurveyCompletedToday] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
+  const adminBypassActive = !!localStorage.getItem('adminBypass');
 
   const [currentDay] = useState(() => studyService.getCurrentStudyDay());
   const [previousDay] = useState(() => studyService.getPreviousStudyDay());
@@ -202,7 +209,7 @@ function HomePage() {
           {/* Survey button */}
           <button
             className="btn btn-primary btn-lg"
-            disabled={statusLoading || surveyCompletedToday}
+            disabled={statusLoading || (surveyCompletedToday && !adminBypassActive)}
             onClick={() => navigate('/survey')}
             style={{
               minWidth: "200px",
@@ -213,13 +220,13 @@ function HomePage() {
               alignItems: "center",
               justifyContent: "center",
               gap: "var(--spacing-sm)",
-              opacity: surveyCompletedToday ? 0.5 : 1,
-              cursor: surveyCompletedToday ? "not-allowed" : "pointer",
+              opacity: (surveyCompletedToday && !adminBypassActive) ? 0.5 : 1,
+              cursor: (surveyCompletedToday && !adminBypassActive) ? "not-allowed" : "pointer",
             }}
           >
             <span style={{ fontSize: "2rem" }}>&#9835;</span>
             <span>Start Survey</span>
-            {surveyCompletedToday && (
+            {surveyCompletedToday && !adminBypassActive && (
               <span style={{ fontSize: "0.75rem", fontWeight: "normal" }}>Completed today</span>
             )}
           </button>

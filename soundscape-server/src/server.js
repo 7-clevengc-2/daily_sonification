@@ -517,6 +517,15 @@ app.get('/api/study/progress', authenticateToken, (req, res) => {
   });
 });
 
+// Admin endpoint to verify admin password
+app.post('/api/admin/verify', (req, res) => {
+  const { adminKey } = req.body;
+  if (adminKey && adminKey === process.env.ADMIN_KEY) {
+    return res.json({ success: true });
+  }
+  return res.status(401).json({ error: "Invalid admin password" });
+});
+
 // Admin endpoint to export all study data
 app.get('/api/admin/export-data', (req, res) => {
   // Simple authentication check (you should implement proper admin auth)

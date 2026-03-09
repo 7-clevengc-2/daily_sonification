@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import studyService from "../services/studyService";
-import config from "../config.js";
 
 const MIN_DAY = 1;
 const MAX_DAY = 14;
@@ -12,16 +11,9 @@ function clampDay(value) {
 }
 
 function Settings() {
-  // Study Day state
   const [currentDay, setCurrentDay] = useState(studyService.getCurrentStudyDay());
   const [inputDay, setInputDay] = useState(currentDay);
   const [dayStatus, setDayStatus] = useState(null);
-
-  // Admin Export state
-  const [adminKey, setAdminKey] = useState("");
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportError, setExportError] = useState("");
-  const [exportSuccess, setExportSuccess] = useState(false);
 
   useEffect(() => {
     const storedDay = studyService.getCurrentStudyDay();
@@ -51,52 +43,6 @@ function Settings() {
     setCurrentDay(MIN_DAY);
     setInputDay(MIN_DAY);
     setDayStatus({ type: "info", message: "Study day reset to Day 1." });
-  };
-
-  const handleExport = async () => {
-    if (!adminKey.trim()) {
-      setExportError("Please enter an admin key");
-      return;
-    }
-
-    setIsExporting(true);
-    setExportError("");
-    setExportSuccess(false);
-
-    try {
-      const response = await fetch(
-        `${config.apiBaseUrl}/api/admin/export-data?adminKey=${encodeURIComponent(adminKey)}`,
-        {
-          method: "GET",
-          headers: { Accept: "text/csv" },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Export failed" }));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const csvContent = await response.text();
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `study_data_${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      setExportSuccess(true);
-      setExportError("");
-    } catch (error) {
-      console.error("Export failed:", error);
-      setExportError(error.message || "Export failed. Please check your admin key and try again.");
-      setExportSuccess(false);
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   return (
@@ -164,76 +110,12 @@ function Settings() {
         </div>
       </div>
 
-      {/* Admin Data Export Section */}
+      {/* Admin Link */}
       <div className="card" style={{ maxWidth: "560px", margin: "0 auto" }}>
-        <div className="card-body">
-          <h2 className="card-title" style={{ marginBottom: "1rem" }}>Study Data Export</h2>
-          <p style={{ marginBottom: "1rem", color: "#666" }}>
-            Enter your admin key to download the complete study data as a CSV file.
-          </p>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label htmlFor="adminKey" style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-              Admin Key:
-            </label>
-            <input
-              id="adminKey"
-              type="password"
-              value={adminKey}
-              onChange={(e) => {
-                setAdminKey(e.target.value);
-                setExportError("");
-                setExportSuccess(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && adminKey.trim() && !isExporting) {
-                  handleExport();
-                }
-              }}
-              className="form-input"
-              placeholder="Enter your admin key"
-              disabled={isExporting}
-            />
-          </div>
-
-          {exportError && (
-            <div
-              style={{
-                marginBottom: "1rem",
-                padding: "0.75rem",
-                backgroundColor: "#f8d7da",
-                color: "#721c24",
-                border: "1px solid #f5c6cb",
-                borderRadius: "4px",
-              }}
-            >
-              {exportError}
-            </div>
-          )}
-
-          {exportSuccess && (
-            <div
-              style={{
-                marginBottom: "1rem",
-                padding: "0.75rem",
-                backgroundColor: "#d4edda",
-                color: "#155724",
-                border: "1px solid #c3e6cb",
-                borderRadius: "4px",
-              }}
-            >
-              Data exported successfully! Check your downloads folder.
-            </div>
-          )}
-
-          <button
-            onClick={handleExport}
-            disabled={isExporting || !adminKey.trim()}
-            className="btn btn-primary"
-            style={{ width: "100%" }}
-          >
-            {isExporting ? "Exporting..." : "Export Study Data"}
-          </button>
+        <div className="card-body" style={{ textAlign: "center" }}>
+          <Link to="/admin" className="btn btn-outline" style={{ width: "100%" }}>
+            Admin
+          </Link>
         </div>
       </div>
     </div>

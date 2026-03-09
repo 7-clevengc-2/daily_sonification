@@ -143,9 +143,6 @@ function Survey() {
 
   // Daily limit state
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
-  const [showAdminInput, setShowAdminInput] = useState(false);
-  const [adminKeyInput, setAdminKeyInput] = useState("");
-  const [adminError, setAdminError] = useState("");
   const [adminBypassActive, setAdminBypassActive] = useState(!!localStorage.getItem('adminBypass'));
 
   // Track if the user has interacted with the tempo slider
@@ -569,29 +566,6 @@ function Survey() {
     }
   }
 
-  const handleAdminOverride = async () => {
-    setAdminError("");
-    if (!adminKeyInput.trim()) {
-      setAdminError("Please enter the admin code.");
-      return;
-    }
-    try {
-      const currentStudyDay = studyService.getCurrentStudyDay();
-      const sessionData = await studyService.startStudySession(currentStudyDay, adminKeyInput.trim());
-      localStorage.setItem('adminBypass', adminKeyInput.trim());
-      setAdminBypassActive(true);
-      setSessionId(sessionData.sessionId);
-      setStudyDay(currentStudyDay);
-      setDailyLimitReached(false);
-    } catch (error) {
-      if (error.code === 'daily_limit') {
-        setAdminError("Invalid admin code.");
-      } else {
-        setAdminError("Failed to override. Please try again.");
-      }
-    }
-  };
-
   const handleDisableAdminBypass = () => {
     localStorage.removeItem('adminBypass');
     setAdminBypassActive(false);
@@ -656,57 +630,6 @@ function Survey() {
           </button>
         </div>
 
-        <div style={{ marginTop: "2rem" }}>
-          {!showAdminInput ? (
-            <button
-              onClick={() => setShowAdminInput(true)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--secondary-400, #a1a1aa)",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                textDecoration: "underline",
-              }}
-            >
-              Admin Override
-            </button>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-              <input
-                type="password"
-                placeholder="Enter admin code"
-                value={adminKeyInput}
-                onChange={(e) => setAdminKeyInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAdminOverride()}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "6px",
-                  border: "1px solid var(--secondary-300, #d4d4d8)",
-                  fontSize: "0.9rem",
-                  width: "220px",
-                }}
-              />
-              <button
-                onClick={handleAdminOverride}
-                style={{
-                  padding: "0.5rem 1.5rem",
-                  fontSize: "0.9rem",
-                  borderRadius: "6px",
-                  border: "none",
-                  backgroundColor: "var(--secondary-600, #52525b)",
-                  color: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Submit
-              </button>
-              {adminError && (
-                <p style={{ color: "red", fontSize: "0.85rem", margin: 0 }}>{adminError}</p>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     );
   }
