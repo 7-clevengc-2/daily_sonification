@@ -233,13 +233,14 @@ app.post('/logout', (req, res) => {
 // Check if the user has already completed a survey today
 app.get('/api/study/daily-status', authenticateToken, (req, res) => {
   const userId = req.user.id;
+  const timezone = req.query.timezone || 'UTC';
 
   if (!userId) {
     return res.status(400).json({ error: "User ID not found in token" });
   }
 
   db.get(
-    "SELECT id FROM study_sessions WHERE user_id = ? AND completed_at IS NOT NULL AND DATE(completed_at) = DATE('now')",
+    "SELECT id, completed_at FROM study_sessions WHERE user_id = ? AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 1",
     [userId],
     (err, row) => {
       if (err) {
@@ -247,14 +248,15 @@ app.get('/api/study/daily-status', authenticateToken, (req, res) => {
         return res.status(500).json({ error: "Failed to check daily status" });
       }
 
-      res.json({ completedToday: !!row });
+      res.json({ completedToday: row ? hasCompletedToday(row.completed_at, timezone) : false });
     }
   );
 });
 
 // Start a new study session
 app.post('/api/study/start-session', authenticateToken, (req, res) => {
-  const { studyDay, adminKey } = req.body;
+  const { studyDay, adminKey, timezone } = req.body;
+  const userTimezone = timezone || 'UTC';
   const userId = req.user.id;
   const username = req.user.username;
   
@@ -290,7 +292,7 @@ app.post('/api/study/start-session', authenticateToken, (req, res) => {
   }
 
   db.get(
-    "SELECT id FROM study_sessions WHERE user_id = ? AND completed_at IS NOT NULL AND DATE(completed_at) = DATE('now')",
+    "SELECT id, completed_at FROM study_sessions WHERE user_id = ? AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 1",
     [userId],
     (err, row) => {
       if (err) {
@@ -298,7 +300,7 @@ app.post('/api/study/start-session', authenticateToken, (req, res) => {
         return res.status(500).json({ error: "Failed to check daily limit", details: err.message });
       }
 
-      if (row) {
+      if (row && hasCompletedToday(row.completed_at, userTimezone)) {
         return res.status(429).json({
           success: false,
           error: "daily_limit",
@@ -389,6 +391,14 @@ function sqliteUtcToIso(str) {
   const s = String(str).trim();
   if (!s) return null;
   return s.replace(' ', 'T') + (s.endsWith('Z') ? '' : 'Z');
+}
+
+function hasCompletedToday(completedAtRaw, timezone) {
+  const isoStr = sqliteUtcToIso(completedAtRaw);
+  if (!isoStr) return false;
+  const completionDate = new Date(isoStr).toLocaleDateString('en-CA', { timeZone: timezone });
+  const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: timezone });
+  return completionDate === todayDate;
 }
 
 const NUMERIC_RESPONSE_KEYS = new Set([

@@ -14,6 +14,7 @@ class StudyService {
       }
 
       const resolvedAdminKey = adminKey || localStorage.getItem('adminBypass') || undefined;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
       const response = await fetch(`${this.baseUrl}/api/study/start-session`, {
         method: 'POST',
@@ -21,7 +22,7 @@ class StudyService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ studyDay, adminKey: resolvedAdminKey }),
+        body: JSON.stringify({ studyDay, adminKey: resolvedAdminKey, timezone }),
       });
 
       if (!response.ok) {
@@ -116,7 +117,8 @@ class StudyService {
     if (!token) {
       throw new Error('No authentication token found. Please log in again.');
     }
-    const response = await fetch(`${this.baseUrl}/api/study/daily-status`, {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const response = await fetch(`${this.baseUrl}/api/study/daily-status?timezone=${encodeURIComponent(tz)}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
