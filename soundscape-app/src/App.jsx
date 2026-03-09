@@ -55,22 +55,22 @@ function App() {
 }
 
 const allSoundUrls = [
-  "/sounds/calm_pad.wav",
-  "/sounds/stress.wav",
-  "/sounds/768286__lolamoore__happy.mp3",
-  "/sounds/531853__sondredrakensson__do-robots-get-bored-2.mp3",
-  "/sounds/831758__akkaittou__sadatmosphericguitarsoundtrack2.wav",
-  "/sounds/579268__nomiqbomi__angry-drone-1.mp3",
-  "/sounds/forest_birds.wav",
-  "/sounds/traffic.wav",
-  "/sounds/beach.wav",
-  "/sounds/525268__thesuprememuffinpooter__dry-grass-rustle.wav",
-  "/sounds/799197__newlocknew__ambhome_kitchenthe-old-apartmentwall-clockventilation-noise.wav",
-  "/sounds/thunder.wav",
-  "/sounds/really_windy.wav",
-  "/sounds/cicada-72075.mp3",
-  "/sounds/Fog Rolling In.m4a",
-  "/sounds/snow-footstep-sfx-16100.mp3",
+  "/sounds/normalized_audio/calm_pad.wav",
+  "/sounds/normalized_audio/stress.wav",
+  "/sounds/normalized_audio/768286__lolamoore__happy.wav",
+  "/sounds/normalized_audio/531853__sondredrakensson__do-robots-get-bored-2.wav",
+  "/sounds/normalized_audio/831758__akkaittou__sadatmosphericguitarsoundtrack2.wav",
+  "/sounds/normalized_audio/579268__nomiqbomi__angry-drone-1.wav",
+  "/sounds/normalized_audio/forest_birds.wav",
+  "/sounds/normalized_audio/traffic.wav",
+  "/sounds/normalized_audio/beach.wav",
+  "/sounds/normalized_audio/525268__thesuprememuffinpooter__dry-grass-rustle.wav",
+  "/sounds/normalized_audio/799197__newlocknew__ambhome_kitchenthe-old-apartmentwall-clockventilation-noise.wav",
+  "/sounds/normalized_audio/thunder.wav",
+  "/sounds/normalized_audio/really_windy.wav",
+  "/sounds/normalized_audio/cicada-72075.wav",
+  "/sounds/normalized_audio/Fog Rolling In.wav",
+  "/sounds/normalized_audio/snow-footstep-sfx-16100.wav",
 ];
 
 /**

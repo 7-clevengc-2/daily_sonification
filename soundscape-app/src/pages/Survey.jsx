@@ -69,26 +69,26 @@ const ALL_QUESTIONS = [
 
 // Sound mappings (copied from SoundscapePage.jsx)
 const mood_sounds = [
-  { calm: "/sounds/calm_pad.wav" },
-  { stressed: "/sounds/stress.wav" },
-  { happy: "/sounds/768286__lolamoore__happy.mp3" },
-  { bored: "/sounds/531853__sondredrakensson__do-robots-get-bored-2.mp3"},
-  { sad: "/sounds/831758__akkaittou__sadatmosphericguitarsoundtrack2.wav"},
-  { angry: "sounds/579268__nomiqbomi__angry-drone-1.mp3"}
+  { calm: "/sounds/normalized_audio/calm_pad.wav" },
+  { stressed: "/sounds/normalized_audio/stress.wav" },
+  { happy: "/sounds/normalized_audio/768286__lolamoore__happy.wav" },
+  { bored: "/sounds/normalized_audio/531853__sondredrakensson__do-robots-get-bored-2.wav"},
+  { sad: "/sounds/normalized_audio/831758__akkaittou__sadatmosphericguitarsoundtrack2.wav"},
+  { angry: "/sounds/normalized_audio/579268__nomiqbomi__angry-drone-1.wav"}
 ];
 const location_sounds = [
-  { forest: "/sounds/forest_birds.wav" },
-  { "city/suburb": "/sounds/traffic.wav" },
-  { water: "/sounds/beach.wav" },
-  { plains: "/sounds/525268__thesuprememuffinpooter__dry-grass-rustle.wav" },
-  { home: "/sounds/799197__newlocknew__ambhome_kitchenthe-old-apartmentwall-clockventilation-noise.wav"}
+  { forest: "/sounds/normalized_audio/forest_birds.wav" },
+  { "city/suburb": "/sounds/normalized_audio/traffic.wav" },
+  { water: "/sounds/normalized_audio/beach.wav" },
+  { plains: "/sounds/normalized_audio/525268__thesuprememuffinpooter__dry-grass-rustle.wav" },
+  { home: "/sounds/normalized_audio/799197__newlocknew__ambhome_kitchenthe-old-apartmentwall-clockventilation-noise.wav"}
 ];
 const weather_sounds = [
-  { raining: "/sounds/thunder.wav" },
-  { windy: "/sounds/really_windy.wav" },
-  { sunny: "/sounds/cicada-72075.mp3" },
-  { "foggy/cloudy": "/sounds/Fog Rolling In.m4a" },
-  { "snowing/hailing": "/sounds/snow-footstep-sfx-16100.mp3" },
+  { raining: "/sounds/normalized_audio/thunder.wav" },
+  { windy: "/sounds/normalized_audio/really_windy.wav" },
+  { sunny: "/sounds/normalized_audio/cicada-72075.wav" },
+  { "foggy/cloudy": "/sounds/normalized_audio/Fog Rolling In.wav" },
+  { "snowing/hailing": "/sounds/normalized_audio/snow-footstep-sfx-16100.wav" },
 ];
 
 // Explicit audio MIME types and extensions so iOS Safari shows audio sources
